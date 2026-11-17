@@ -5,13 +5,15 @@ import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHoriz
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
-const categories=['Все','Кухни','Шкафы','Стеллажи','Столы','Журнальные столики','Настенные полки','Тумбы под ТВ'];
-const photoIndex=p=>Number(p?.specifications?.spriteIndex??-1);
-const isSprite=p=>p?.image_url?.includes('products-sheet.webp') && photoIndex(p)>=0;
+const categories=['Все','Кухни','Комоды','Шкафы','Гардеробные','Столы','Журнальные столики'];
 function Photo({product,className='',style={}}){
- const idx=photoIndex(product);
- if(isSprite(product))return <div role="img" aria-label={product.name} className={'photo photo-sprite '+className} style={{...style,backgroundImage:'url('+product.image_url+')',backgroundSize:'600% 400%',backgroundPosition:(idx%6*20)+'% '+(Math.floor(idx/6)*100/3)+'%'}}/>;
- return <div className={'photo '+className} style={style}><img src={product.image_url||'/images/no-photo.svg'} alt={product.name} loading="lazy" onError={e=>{e.currentTarget.src='/images/no-photo.svg'}}/></div>;
+ return <div className={'photo '+className} style={style}><img src={product.image_url||'/images/no-photo.svg'} alt={product.name} loading="lazy" onError={e=>{if(!e.currentTarget.src.endsWith('no-photo.svg'))e.currentTarget.src='/images/no-photo.svg'}}/></div>;
+}
+function ProductGallery({product}){
+ const images=[product.image_url,...(Array.isArray(product.gallery)?product.gallery:[])].filter(Boolean);
+ const [current,setCurrent]=useState(images[0]||'');
+ useEffect(()=>setCurrent(images[0]||''),[product.id,product.image_url]);
+ return <div className="detail-gallery"><Photo product={{...product,image_url:current}} className="detail-photo"/>{images.length>1&&<div className="detail-thumbnails">{images.map((src,i)=><button type="button" key={src+i} className={src===current?'selected':''} onClick={()=>setCurrent(src)} aria-label={'Фото '+(i+1)}><img src={src} loading="lazy" alt={product.name+' — фото '+(i+1)}/></button>)}</div>}</div>;
 }
 function toRoute(path){history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'));window.scrollTo({top:0,behavior:'instant'});}
 function App(){
@@ -28,11 +30,11 @@ function App(){
  function adjust(id,d){setCart(c=>{const n={...c};n[id]=Math.max(0,(n[id]||0)+d);if(!n[id])delete n[id];return n})}
  function toggleFavorite(id){setFavorites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id])}
  const visible=useMemo(()=>{let list=products.filter(p=>p.active);if(category!=='Все')list=list.filter(p=>p.category===category);if(query.trim())list=list.filter(p=>(p.name+' '+p.category).toLowerCase().includes(query.trim().toLowerCase()));if(sort==='price-asc')list.sort((a,b)=>(a.price??Infinity)-(b.price??Infinity));if(sort==='price-desc')list.sort((a,b)=>(b.price??-1)-(a.price??-1));return list},[products,category,query,sort]);
- const entries=Object.entries(cart).map(([id,quantity])=>({product:products.find(p=>p.id===id),quantity})).filter(x=>x.product);
+ const entries=Object.entries(cart).map(([id,quantity])=>({product:products.find(p=>p.id===id),quantity})).filter(x=>x.product?.active);
  const count=entries.reduce((v,x)=>v+x.quantity,0);
  const total=entries.reduce((v,x)=>v+(Number(x.product.price)||0)*x.quantity,0);
  const showCatalog=route==='/'||route==='/catalog'||route==='/favorites';
- const selected=route.startsWith('/product/')?products.find(p=>p.slug===route.split('/')[2]):null;
+ const selected=route.startsWith('/product/')?products.find(p=>p.slug===route.split('/')[2]&&p.active):null;
  return <div className="site">
  <header className="header"><div className="header-inner">
    <nav className="desktop-nav"><button onClick={()=>{setCategory('Все');toRoute('/catalog')}}>Каталог</button><button onClick={()=>{setCategory('Кухни');toRoute('/catalog')}}>Коллекции</button><button onClick={()=>toRoute('/about')}>О нас</button></nav>
@@ -49,7 +51,7 @@ function App(){
  {showCatalog?<main>
   <section className="gallery-top">
    <div className="gallery-caption"><span>RIPIANO / CATALOG</span><span>01 — 04</span></div>
-   <div className="gallery-featured">{products.slice(0,4).map(p=><button key={p.id} onClick={()=>toRoute('/product/'+p.slug)} className="featured-product"><Photo product={p}/><div className="featured-details"><span>{p.name}</span><span>{money(p.price)}</span></div></button>)}</div>
+   <div className="gallery-featured">{products.filter(p=>p.active).slice(0,4).map(p=><button key={p.id} onClick={()=>toRoute('/product/'+p.slug)} className="featured-product"><Photo product={p}/><div className="featured-details"><span>{p.name}</span><span>{money(p.price)}</span></div></button>)}</div>
   </section>
   <section className="catalog-shell" id="catalog">
    <div className="breadcrumbs"><button onClick={()=>toRoute('/')}>Главная</button> / Каталог</div>
@@ -66,7 +68,7 @@ function App(){
    {!loading&&(!visible.length||route==='/favorites'&&!favorites.length)&&<div className="empty-state">В этой категории пока нет товаров.</div>}
    <p className="catalog-count">ПОКАЗАНО {route==='/favorites'?favorites.length:visible.length} ИЗ {products.filter(p=>p.active).length} ТОВАРОВ</p>
   </section>
- </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><Photo product={selected} className="detail-photo"/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p></div></div></main>
+ </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p></div></div></main>
  :route==='/admin'?<Admin session={session} refresh={fetchProducts}/>
  :route==='/about'?<main className="about-main"><span className="eyebrow">RIPIANO / О НАС</span><h1>Мебель для вашего пространства.</h1><p>Корпусная мебель, созданная с вниманием к деталям. Каталог готовых изделий и индивидуальные заказы.</p><button className="btn-dark" onClick={()=>toRoute('/catalog')}>Смотреть каталог <ArrowRight size={16}/></button></main>
  :<main className="empty-state"><button onClick={()=>toRoute('/')}>На главную</button></main>}
