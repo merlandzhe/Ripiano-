@@ -5,7 +5,7 @@ import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHoriz
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
-const categories=['Все','Кухни','Комоды','Шкафы','Гардеробные','Столы','Журнальные столики'];
+const categories=['Все','Комплекты мебели','Кухни','Комоды','Шкафы','Гардеробные','Столы','Журнальные столики'];
 function Photo({product,className='',style={}}){
  return <div className={'photo '+className} style={style}><img src={product.image_url||'/images/no-photo.svg'} alt={product.name} loading="lazy" onError={e=>{if(!e.currentTarget.src.endsWith('no-photo.svg'))e.currentTarget.src='/images/no-photo.svg'}}/></div>;
 }
