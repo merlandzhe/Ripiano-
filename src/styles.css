@@ -41,56 +41,56 @@
 }
 
 
-/* RIPIANO asymmetric catalog, repeating pattern of six rows:
-   1 left / right empty; 2 left empty / right; 3 full width;
-   4 left empty / right; 5 left / right empty; 6 full width.
-   Do not use dense auto-placement: blank cells are intentional. */
+/* RIPIANO editorial mosaic — exact eight-product rhythm:
+   Row 1: two side by side
+   Row 2: one beneath first (blank right)
+   Row 3: one wide feature
+   Row 4: two side by side
+   Row 5: one beneath second (blank left)
+   Row 6: one wide feature.
+   Repeat without dense auto-flow, preserving intentional whitespace. */
 .products-grid.mosaic-grid {
  display:grid;
  grid-template-columns:repeat(2,minmax(0,1fr));
  grid-auto-flow:row;
  grid-auto-rows:auto;
  column-gap:22px;
- row-gap:30px;
+ row-gap:28px;
+ align-items:start;
  max-width:1160px;
  margin-inline:auto;
- align-items:start;
 }
 .mosaic-grid>.product-tile {
  display:flex;
  flex-direction:column;
- grid-column:1;
  min-width:0;
  position:relative;
+ align-self:start;
+ grid-column:1 / 2;
 }
 .mosaic-grid>.product-tile.mosaic-tile-0,
+.mosaic-grid>.product-tile.mosaic-tile-2,
 .mosaic-grid>.product-tile.mosaic-tile-4 {grid-column:1 / 2}
 .mosaic-grid>.product-tile.mosaic-tile-1,
-.mosaic-grid>.product-tile.mosaic-tile-3 {grid-column:2 / 3}
-.mosaic-grid>.product-tile.mosaic-tile-2,
-.mosaic-grid>.product-tile.mosaic-tile-5 {grid-column:1 / -1}
+.mosaic-grid>.product-tile.mosaic-tile-5,
+.mosaic-grid>.product-tile.mosaic-tile-6 {grid-column:2 / 3}
+.mosaic-grid>.product-tile.mosaic-tile-3,
+.mosaic-grid>.product-tile.mosaic-tile-7 {grid-column:1 / -1}
 .mosaic-grid .product-image-btn {display:block;width:100%;padding:0;overflow:hidden;flex:none}
-.mosaic-grid .product-image-btn .photo {width:100%;height:auto;aspect-ratio:1.2}
+.mosaic-grid .product-image-btn .photo{width:100%;height:auto;aspect-ratio:1.2}
 .mosaic-grid .product-image-btn .photo img{display:block;width:100%;height:100%;object-fit:cover}
-.mosaic-grid>.mosaic-tile-2 .product-image-btn .photo,
-.mosaic-grid>.mosaic-tile-5 .product-image-btn .photo {aspect-ratio:2.05}
+.mosaic-grid>.mosaic-tile-3 .product-image-btn .photo,
+.mosaic-grid>.mosaic-tile-7 .product-image-btn .photo{aspect-ratio:2.05}
 .mosaic-grid .product-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:8px;min-width:0;font-size:12px;line-height:1.4}
 .mosaic-grid .product-meta button{min-width:0;text-align:left;overflow-wrap:anywhere}
 .mosaic-grid .product-meta span{white-space:nowrap;flex:none}
 .mosaic-grid .tile-actions{opacity:1;top:10px;right:10px}
-@media(max-width:680px) {
- .products-grid.mosaic-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:24px}
- .mosaic-grid>.product-tile{grid-column:1 / 2}
- .mosaic-grid>.product-tile.mosaic-tile-0,
- .mosaic-grid>.product-tile.mosaic-tile-4{grid-column:1 / 2}
- .mosaic-grid>.product-tile.mosaic-tile-1,
- .mosaic-grid>.product-tile.mosaic-tile-3{grid-column:2 / 3}
- .mosaic-grid>.product-tile.mosaic-tile-2,
- .mosaic-grid>.product-tile.mosaic-tile-5{grid-column:1 / -1}
+@media(max-width:680px){
+ .products-grid.mosaic-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:22px}
  .mosaic-grid .product-image-btn .photo{aspect-ratio:.78}
- .mosaic-grid>.mosaic-tile-2 .product-image-btn .photo,
- .mosaic-grid>.mosaic-tile-5 .product-image-btn .photo{aspect-ratio:1.45}
- .mosaic-grid .product-meta{display:flex;flex-direction:column;justify-content:flex-start;gap:2px;font-size:10px;margin-top:6px;line-height:1.3}
+ .mosaic-grid>.mosaic-tile-3 .product-image-btn .photo,
+ .mosaic-grid>.mosaic-tile-7 .product-image-btn .photo{aspect-ratio:1.45}
+ .mosaic-grid .product-meta{display:flex;flex-direction:column;justify-content:flex-start;gap:2px;margin-top:6px;font-size:10px;line-height:1.3}
  .mosaic-grid .product-meta span{white-space:normal}
  .mosaic-grid .tile-actions{top:7px;right:7px}
 }
