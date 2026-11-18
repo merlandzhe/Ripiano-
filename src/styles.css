@@ -5,3 +5,37 @@
 
 /* RIPIANO original photo gallery */
 .detail-gallery{min-width:0}.detail-thumbnails{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}.detail-thumbnails button{width:79px;height:76px;padding:0;border:2px solid transparent;opacity:.66;background:#eee;transition:opacity .2s}.detail-thumbnails button.selected{border-color:#333;opacity:1}.detail-thumbnails button:hover{opacity:1}.detail-thumbnails img{width:100%;height:100%;object-fit:cover;display:block}@media(max-width:680px){.detail-thumbnails button{width:65px;height:65px}}
+
+
+/* Responsive, swipeable full-catalog showcase */
+.catalog-carousel{overflow:hidden}
+.catalog-carousel .carousel-heading{max-width:1350px;margin-bottom:19px;align-items:center}
+.carousel-navigation{display:flex;align-items:center;gap:9px}
+.carousel-counter{min-width:72px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.08em}
+.carousel-navigation button{width:34px;height:34px;border:1px solid #ffffff80;display:grid;place-items:center;border-radius:50%;transition:background .18s;touch-action:manipulation}
+.carousel-navigation button:disabled{opacity:.25;cursor:default}
+.carousel-navigation button:not(:disabled):hover{background:#ffffff30}
+.featured-scroll{display:flex;gap:16px;max-width:1350px;margin:0 auto;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding-inline:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding-bottom:4px}
+.featured-scroll::-webkit-scrollbar{display:none}
+.featured-card{display:block;text-align:left;flex:0 0 calc((100% - 48px) / 4);min-width:0;padding:0;scroll-snap-align:start}
+.featured-card .featured-photo{width:100%;aspect-ratio:1.04;background:#d9d2ca}
+.featured-card .featured-photo img{width:100%;height:100%;object-fit:cover}
+.featured-info{display:flex;flex-direction:column;gap:5px;padding:10px 1px 0;min-height:49px;font-size:12px;line-height:1.4}
+.featured-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;min-height:1.4em}
+.featured-price{white-space:nowrap;font-size:11px;opacity:.83}
+@media(max-width:950px){
+ .featured-scroll{gap:12px}
+ .featured-card{flex-basis:calc((100% - 24px) / 3)}
+}
+@media(max-width:680px){
+ .catalog-carousel.gallery-top{padding:18px 17px 23px}
+ .catalog-carousel .carousel-heading{margin-bottom:12px}
+ .carousel-navigation{gap:6px}
+ .carousel-counter{min-width:51px;font-size:10px}
+ .carousel-navigation button{width:32px;height:32px}
+ .featured-scroll{gap:12px}
+ .featured-card{flex:0 0 min(62vw,280px)}
+ .featured-card .featured-photo{aspect-ratio:1.12}
+ .featured-info{font-size:11px;gap:4px;padding-top:8px;min-height:48px}
+ .featured-price{font-size:11px}
+}

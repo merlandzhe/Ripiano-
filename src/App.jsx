@@ -1,5 +1,5 @@
 
-import React, {useEffect,useMemo,useState} from 'react';
+import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid} from 'lucide-react';
 
@@ -15,6 +15,56 @@ function ProductGallery({product}){
  useEffect(()=>setCurrent(images[0]||''),[product.id,product.image_url]);
  return <div className="detail-gallery"><Photo product={{...product,image_url:current}} className="detail-photo"/>{images.length>1&&<div className="detail-thumbnails">{images.map((src,i)=><button type="button" key={src+i} className={src===current?'selected':''} onClick={()=>setCurrent(src)} aria-label={'Фото '+(i+1)}><img src={src} loading="lazy" alt={product.name+' — фото '+(i+1)}/></button>)}</div>}</div>;
 }
+
+function FeaturedCarousel({products}){
+ const trackRef=useRef(null);
+ const [position,setPosition]=useState({index:0,canPrev:false,canNext:false});
+ useEffect(()=>{
+  const track=trackRef.current;
+  if(!track)return;
+  const sync=()=>{
+   const first=track.querySelector('.featured-card');
+   const gap=parseFloat(window.getComputedStyle(track).columnGap)||0;
+   const step=first?first.getBoundingClientRect().width+gap:1;
+   const max=Math.max(0,track.scrollWidth-track.clientWidth);
+   const index=Math.min(products.length-1,Math.max(0,Math.round(track.scrollLeft/step)));
+   setPosition(prev=>prev.index===index&&prev.canPrev===(track.scrollLeft>2)&&prev.canNext===(track.scrollLeft<max-2)?prev:{index,canPrev:track.scrollLeft>2,canNext:track.scrollLeft<max-2});
+  };
+  track.scrollLeft=0;
+  sync();
+  track.addEventListener('scroll',sync,{passive:true});
+  window.addEventListener('resize',sync);
+  const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(sync);
+  observer?.observe(track);
+  return ()=>{track.removeEventListener('scroll',sync);window.removeEventListener('resize',sync);observer?.disconnect()};
+ },[products.length]);
+ const slide=direction=>{
+  const track=trackRef.current;
+  const card=track?.querySelector('.featured-card');
+  if(!track||!card)return;
+  const gap=parseFloat(window.getComputedStyle(track).columnGap)||0;
+  const step=card.getBoundingClientRect().width+gap;
+  track.scrollBy({left:direction*step,behavior:'smooth'});
+ };
+ if(!products.length)return null;
+ return <section className="gallery-top catalog-carousel" aria-label="Подборка мебели RIPIANO">
+  <div className="gallery-caption carousel-heading">
+   <span>RIPIANO / КАТАЛОГ</span>
+   <div className="carousel-navigation">
+    <span className="carousel-counter">{String(position.index+1).padStart(2,'0')} / {String(products.length).padStart(2,'0')}</span>
+    <button type="button" aria-label="Предыдущий товар" disabled={!position.canPrev} onClick={()=>slide(-1)}><ArrowLeft size={17}/></button>
+    <button type="button" aria-label="Следующий товар" disabled={!position.canNext} onClick={()=>slide(1)}><ArrowRight size={17}/></button>
+   </div>
+  </div>
+  <div className="featured-scroll" ref={trackRef} role="region" tabIndex={0} aria-label="Все товары, листайте горизонтально" onKeyDown={e=>{if(e.key==='ArrowRight'){e.preventDefault();slide(1)}else if(e.key==='ArrowLeft'){e.preventDefault();slide(-1)}}}>
+   {products.map(p=><button type="button" className="featured-card" key={p.id} onClick={()=>toRoute('/product/'+p.slug)} aria-label={p.name+', '+money(p.price)}>
+    <Photo product={p} className="featured-photo"/>
+    <span className="featured-info"><span className="featured-name">{p.name}</span><span className="featured-price">{money(p.price)}</span></span>
+   </button>)}
+  </div>
+ </section>;
+}
+
 function toRoute(path){history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'));window.scrollTo({top:0,behavior:'instant'});}
 function App(){
  const [products,setProducts]=useState([]),[loading,setLoading]=useState(true),[category,setCategory]=useState('Все'),[query,setQuery]=useState(''),[sort,setSort]=useState('featured');
@@ -49,10 +99,7 @@ function App(){
  {search&&showCatalog&&<div className="searchbar"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск по каталогу"/><button onClick={()=>{setQuery('');setSearch(false)}}><X size={18}/></button></div>}
  </header>
  {showCatalog?<main>
-  <section className="gallery-top">
-   <div className="gallery-caption"><span>RIPIANO / CATALOG</span><span>01 — 04</span></div>
-   <div className="gallery-featured">{products.filter(p=>p.active).slice(0,4).map(p=><button key={p.id} onClick={()=>toRoute('/product/'+p.slug)} className="featured-product"><Photo product={p}/><div className="featured-details"><span>{p.name}</span><span>{money(p.price)}</span></div></button>)}</div>
-  </section>
+  <FeaturedCarousel products={products.filter(p=>p.active)}/>
   <section className="catalog-shell" id="catalog">
    <div className="breadcrumbs"><button onClick={()=>toRoute('/')}>Главная</button> / Каталог</div>
    <div className="catalog-intro"><h1>{route==='/favorites'?'ИЗБРАННОЕ':'КАТАЛОГ'}</h1><p>Современная мебель для<br/>пространства, в котором хочется жить.</p></div>
