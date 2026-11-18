@@ -2,6 +2,7 @@
 import React,{useState} from 'react';
 import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
 import './wardrobe-configurator.css';
+import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 
 const COLOR_OPTIONS=[
  {id:'white',name:'Белый',hex:'#f6f3ed'},
@@ -160,7 +161,7 @@ export default function WardrobeConfigurator({supabase}){
    <div className="wc-preview-column">
     <div className="wc-preview-card">
      <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div><button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(false)}}><RotateCcw size={15}/> Сбросить</button></div>
-     <WardrobePreview config={config} doors={doors}/>
+     <FurniturePreviewSwitch config={config} doors={doors} twoD={<WardrobePreview config={config} doors={doors}/>}/>
      <div className="wc-preview-toggle" role="group" aria-label="Вид шкафа"><button type="button" className={!doors?'active':''} aria-pressed={!doors} onClick={()=>setDoors(false)}>Внутри</button><button type="button" className={doors?'active':''} aria-pressed={doors} onClick={()=>setDoors(true)}>С дверями</button></div>
      <div className="wc-preview-note"><Ruler size={16}/><span>Схема для предварительного расчёта. Точные размеры деталей и конструкцию согласует мебельщик.</span></div>
     </div>

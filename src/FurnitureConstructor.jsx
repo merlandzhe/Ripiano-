@@ -2,6 +2,7 @@
 import React,{useEffect,useState} from 'react';
 import {ArrowLeft,ArrowRight,Check,RotateCcw,Ruler} from 'lucide-react';
 import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
+import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 import './furniture-constructor.css';
 
 const TYPES=[
@@ -158,7 +159,7 @@ function CustomFurniture({kind,supabase}){
    <div className="wc-preview-column">
     <div className="wc-preview-card">
      <div className="wc-preview-header"><div><span className="wc-eyebrow">ПРЕДВАРИТЕЛЬНЫЙ ЭСКИЗ</span><b>{meta.label}</b></div><button type="button" className="wc-reset" onClick={reset}><RotateCcw size={16}/> Сбросить</button></div>
-     <FurnitureDrawing config={config}/>
+     <FurniturePreviewSwitch config={config} twoD={<FurnitureDrawing config={config}/>}/>
      <div className="wc-preview-note"><Ruler size={17}/><span>Схема для расчёта, не производственный чертёж. Детали конструкции согласуем с мебельщиком.</span></div>
     </div>
    </div>
