@@ -102,7 +102,7 @@ function App(){
     <button title="Избранное" onClick={()=>toRoute('/favorites')}><Heart size={19} fill={route==='/favorites'?'currentColor':'none'}/></button>
     <button title="Корзина" className="bag-button" onClick={()=>setCartOpen(true)}><ShoppingBag size={19}/>{count>0&&<span className="bag-counter">{count}</span>}</button>
    </div>
- </div>{menu&&<nav className="mobile-nav">{['Все',...categories.slice(1)].map(c=><button key={c} onClick={()=>{setCategory(c);setMenu(false);toRoute('/catalog')}}>{c}</button>)}<button onClick={()=>{setMenu(false);toRoute('/constructor')}}>Конструктор шкафа на заказ</button><button onClick={()=>{setMenu(false);toRoute('/admin')}}>Кабинет владельца</button></nav>}
+ </div>{menu&&<nav className="mobile-nav">{['Все',...categories.slice(1)].map(c=><button key={c} onClick={()=>{setCategory(c);setMenu(false);toRoute('/catalog')}}>{c}</button>)}<button onClick={()=>{setMenu(false);toRoute('/constructor')}}>Конструктор на заказ</button><button onClick={()=>{setMenu(false);toRoute('/admin')}}>Кабинет владельца</button></nav>}
  {search&&showCatalog&&<div className="searchbar"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск по каталогу"/><button onClick={()=>{setQuery('');setSearch(false)}}><X size={18}/></button></div>}
  </header>
  {showCatalog?<main>
