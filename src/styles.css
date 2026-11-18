@@ -295,3 +295,21 @@
  .wc-admin-project-bottom label,.wc-admin-project-bottom select{width:100%}
  .wc-admin-projects .admin-order{padding:16px}
 }
+
+
+/* Direct constructor entry alongside catalog breadcrumbs */
+.catalog-entry-row{display:flex;justify-content:space-between;align-items:center;gap:14px;min-width:0}
+.catalog-entry-row .breadcrumbs{flex:0 1 auto;min-width:0}
+.catalog-constructor-link{display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;flex:0 0 auto;padding:5px 0 4px;color:#242321;border-bottom:1px solid #82786c;font-size:12px;font-weight:650;line-height:1.2;white-space:nowrap;transition:border-color .15s,color .15s}
+.catalog-constructor-link:hover{color:#746454;border-bottom-color:#242321}
+.catalog-constructor-link svg{flex:0 0 auto}
+@media(max-width:680px){
+ .catalog-entry-row{gap:9px;align-items:center}
+ .catalog-entry-row .breadcrumbs{font-size:10px}
+ .catalog-constructor-link{font-size:10px;gap:4px;padding:4px 0 3px}
+ .catalog-constructor-link svg{width:13px;height:13px}
+}
+@media(max-width:350px){
+ .catalog-constructor-link{font-size:9px}
+ .catalog-entry-row .breadcrumbs{font-size:9px}
+}
