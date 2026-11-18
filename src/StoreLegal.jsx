@@ -2,6 +2,7 @@
 import React,{useEffect,useState} from 'react';
 import {ArrowLeft,ArrowRight,CheckCircle,ShieldAlert} from 'lucide-react';
 import './store-legal.css';
+import {REQUESTS_ENABLED} from './ComplianceStatus.jsx';
 
 const FALLBACK={id:1,legal_name:'',legal_type:'',inn:'',ogrn:'',registered_address:'',support_email:'',store_address:'Чеченская Республика, с. Толстой-Юрт, посёлок №2, 41',contact_phone:'+7 (965) 100-39-00',claims_contact:''};
 const fields=[
@@ -53,6 +54,7 @@ export function StoreSettingsAdmin({supabase}){
  return <section className="rl-admin">
   <h2>Реквизиты продавца</h2>
   <p>Эти сведения публикуются на сайте. Вносите только подтверждённые документы: юридические данные нельзя заменять адресом магазина или придуманным ИНН.</p>
+  {!REQUESTS_ENABLED&&<div className="rl-warning"><ShieldAlert size={19}/><span>Сохранение реквизитов временно заблокировано до переноса персональных данных на сервер в РФ. ФИО ИП, ИНН и адрес могут являться персональными данными. Поля можно подготовить, но не отправляйте их в текущую зарубежную базу.</span></div>}
   {loading?<p>Загружаем реквизиты…</p>:<form onSubmit={save}>
    {fields.map(field=><label key={field.key}>{field.name}
     <input value={form[field.key]||''} maxLength={field.max} placeholder={field.placeholder}
@@ -60,7 +62,7 @@ export function StoreSettingsAdmin({supabase}){
      onChange={e=>setForm(current=>({...current,[field.key]:e.target.value}))}/>
    </label>)}
    {message&&<p className="rl-status" role="status">{message}</p>}
-   <button type="submit" className="btn-dark" disabled={saving}>{saving?'Сохраняем…':'Сохранить реквизиты'} <CheckCircle size={17}/></button>
+   <button type="submit" className="btn-dark" disabled={saving||!REQUESTS_ENABLED}>{saving?'Сохраняем…':'Сохранить реквизиты'} <CheckCircle size={17}/></button>
   </form>}
  </section>;
 }
