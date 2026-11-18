@@ -205,7 +205,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
    session.current={group,renderer,camera,controls,schedule,materials:[],lastFit:null,fit:null};
    const fit=(w,h,d)=>{
     const radius=Math.max(w,h,d);
-    const factor=Math.max(radius/(2*Math.tan(37*Math.PI/360))*1.85,2);
+    const factor=Math.max(radius/(2*Math.tan(37*Math.PI/360))*1.28,1.8);
     camera.position.set(factor*.82,h*.52+factor*.48,factor*.95);
     controls.target.set(0,h*.50,0);
     controls.minDistance=Math.max(.5,radius*.78);
@@ -216,6 +216,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
    session.current.fit=fit;
    size();
    return ()=>{
+    const last=session.current;
     session.current=null;
     observer?.disconnect();
     controls.removeEventListener('change',schedule);
@@ -224,7 +225,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
     if(frame!==null)cancelAnimationFrame(frame);
     disposeGroup(group);
     ground.geometry.dispose();ground.material.dispose();
-    const previous=session.current?.materials||[];
+    const previous=last?.materials||[];
     for(const m of previous)m.dispose();
     renderer.dispose();
    };
