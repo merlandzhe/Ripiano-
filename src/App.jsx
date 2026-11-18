@@ -1,7 +1,8 @@
 
 import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
-import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical, MapPin, MessageCircle, Instagram} from 'lucide-react';
+import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
+import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical, MapPin, MessageCircle, Instagram, Layers} from 'lucide-react';
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
@@ -93,7 +94,7 @@ function App(){
  const selected=route.startsWith('/product/')?products.find(p=>p.slug===route.split('/')[2]&&p.active):null;
  return <div className="site">
  <header className="header"><div className="header-inner">
-   <nav className="desktop-nav"><button onClick={()=>{setCategory('Все');toRoute('/catalog')}}>Каталог</button><button onClick={()=>{setCategory('Кухни');toRoute('/catalog')}}>Коллекции</button><button onClick={()=>toRoute('/about')}>О нас</button></nav>
+   <nav className="desktop-nav"><button onClick={()=>{setCategory('Все');toRoute('/catalog')}}>Каталог</button><button onClick={()=>{setCategory('Кухни');toRoute('/catalog')}}>Коллекции</button><button onClick={()=>toRoute('/constructor')}>На заказ</button><button onClick={()=>toRoute('/about')}>О нас</button></nav>
    <button className="mobile-menu" aria-label="Меню" onClick={()=>setMenu(!menu)}>{menu?<X size={21}/>:<Menu size={21}/>}</button>
    <button className="logo" onClick={()=>{setCategory('Все');toRoute('/')}}>RIPIANO<span className="logo-dot">.</span></button>
    <div className="header-actions">
@@ -101,7 +102,7 @@ function App(){
     <button title="Избранное" onClick={()=>toRoute('/favorites')}><Heart size={19} fill={route==='/favorites'?'currentColor':'none'}/></button>
     <button title="Корзина" className="bag-button" onClick={()=>setCartOpen(true)}><ShoppingBag size={19}/>{count>0&&<span className="bag-counter">{count}</span>}</button>
    </div>
- </div>{menu&&<nav className="mobile-nav">{['Все',...categories.slice(1)].map(c=><button key={c} onClick={()=>{setCategory(c);setMenu(false);toRoute('/catalog')}}>{c}</button>)}<button onClick={()=>{setMenu(false);toRoute('/admin')}}>Кабинет владельца</button></nav>}
+ </div>{menu&&<nav className="mobile-nav">{['Все',...categories.slice(1)].map(c=><button key={c} onClick={()=>{setCategory(c);setMenu(false);toRoute('/catalog')}}>{c}</button>)}<button onClick={()=>{setMenu(false);toRoute('/constructor')}}>Конструктор шкафа на заказ</button><button onClick={()=>{setMenu(false);toRoute('/admin')}}>Кабинет владельца</button></nav>}
  {search&&showCatalog&&<div className="searchbar"><Search size={18}/><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Поиск по каталогу"/><button onClick={()=>{setQuery('');setSearch(false)}}><X size={18}/></button></div>}
  </header>
  {showCatalog?<main>
@@ -120,9 +121,14 @@ function App(){
    </article>)}</div>}
    {!loading&&(!visible.length||route==='/favorites'&&!favorites.length)&&<div className="empty-state">В этой категории пока нет товаров.</div>}
    <p className="catalog-count">ПОКАЗАНО {route==='/favorites'?favorites.length:visible.length} ИЗ {products.filter(p=>p.active).length} ТОВАРОВ</p>
+   <div className="catalog-bespoke">
+    <div><span className="eyebrow">RIPIANO / МЕБЕЛЬ НА ЗАКАЗ</span><h2>Шкаф под ваши размеры.</h2><p>Соберите шкаф из секций, выберите наполнение и отделку. Покажем эскиз и рассчитаем стоимость.</p></div>
+    <button className="btn-dark" onClick={()=>toRoute('/constructor')}>Открыть конструктор <ArrowRight size={17}/></button>
+   </div>
   </section>
- </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p></div></div></main>
+ </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p>{selected.category==='Шкафы'&&<button type="button" className="detail-custom-link" onClick={()=>toRoute('/constructor')}>Нужен шкаф другого размера? Создать на заказ <ArrowRight size={15}/></button>}</div></div></main>
  :route==='/admin'?<Admin session={session} refresh={fetchProducts}/>
+ :route==='/constructor'?<WardrobeConfigurator supabase={supabase}/>
  :route==='/about'?<main className="about-main ripiano-about">
   <span className="eyebrow">RIPIANO / О НАС</span>
   <h1>Мебель для вашего пространства.</h1>
@@ -147,6 +153,7 @@ function App(){
   <nav className="ripiano-footer-nav" aria-label="Навигация внизу сайта">
    <button onClick={()=>toRoute('/catalog')}>Каталог</button>
    <button onClick={()=>toRoute('/about')}>О нас</button>
+   <button onClick={()=>toRoute('/constructor')}>На заказ</button>
    <button onClick={()=>toRoute('/admin')}>Владельцу</button>
   </nav>
   <div className="ripiano-footer-contacts">
@@ -211,16 +218,54 @@ function Checkout({entries,total,onDone}){
   setSending(false);if(err){setError('Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.');console.error(err)}else{setDone(data)}}
  return <div className="checkout"><div className="checkout-total"><span>Итого</span><strong>{money(total)}</strong></div>{entries.some(x=>x.product.price===null)&&<p className="quote-warning">Часть товаров — по запросу. Финальную сумму подтвердит менеджер.</p>}{done?<div className="checkout-success"><Check size={28}/><b>Заявка отправлена</b><span>Мы свяжемся с вами для подтверждения.</span><button className="btn-dark" onClick={onDone}>Готово</button></div>:<form onSubmit={submit}><h3>Оформить заказ</h3><input required maxLength={120} minLength={2} placeholder="Ваше имя" value={name} onChange={e=>setName(e.target.value)}/><input required type="tel" minLength={7} maxLength={35} placeholder="Телефон" value={phone} onChange={e=>setPhone(e.target.value)}/><input maxLength={400} placeholder="Город / адрес (по желанию)" value={address} onChange={e=>setAddress(e.target.value)}/><textarea maxLength={1500} placeholder="Комментарий к заказу" rows={2} value={note} onChange={e=>setNote(e.target.value)}/>{error&&<p className="error">{error}</p>}<button className="btn-dark" disabled={sending}>{sending?'Отправляем…':'Отправить заявку'} <ArrowRight size={17}/></button><small>Оплата не списывается. Заказ подтвердит менеджер.</small></form>}</div>;
 }
+
+function CustomProjects({projects,onStatus,error}){
+ const statusLabels={new:'Новый',contacted:'Связались',quoted:'Рассчитано',completed:'Завершён',cancelled:'Отменён'};
+ const [pending,setPending]=useState(null);
+ const update=async(id,status)=>{
+  setPending(id);
+  try{await onStatus(id,status)}finally{setPending(null)}
+ };
+ return <div className="wc-admin-projects">
+  <p className="wc-admin-info">Сюда поступают заявки из конструктора. Цены рассчитывает производитель после проверки эскиза и материалов.</p>
+  {error&&<p className="admin-notice">{error}</p>}
+  {projects.length===0?<div className="empty-state">Заявок на изготовление шкафов пока нет.</div>
+  :projects.map(item=><article className="admin-order wc-admin-item" key={item.id}>
+    <div className="order-top"><b>Проект №{item.id.slice(0,8).toUpperCase()}</b><span>{new Date(item.created_at).toLocaleString('ru-RU')}</span></div>
+    <div className="wc-admin-customer"><b>{item.customer_name}</b><a href={'tel:'+item.phone}>{item.phone}</a></div>
+    {item.note&&<p>Пожелания: {item.note}</p>}
+    <div className="wc-admin-project-body"><WardrobePreview config={item.configuration}/><WardrobeDetails config={item.configuration}/></div>
+    <div className="wc-admin-project-bottom"><b>Стоимость: по запросу</b>
+      <label>Статус <select value={item.status} disabled={pending===item.id} onChange={e=>update(item.id,e.target.value)}>
+        {Object.entries(statusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+      </select></label>
+    </div>
+  </article>)}
+ </div>;
+}
+
 function Admin({session,refresh}){
  const [authorized,setAuthorized]=useState(false),[checking,setChecking]=useState(true),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMessage,setAuthMessage]=useState(''),[busy,setBusy]=useState(false);
- const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState(''),[uploadProgress,setUploadProgress]=useState('');
+ const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[projects,setProjects]=useState([]),[projectsError,setProjectsError]=useState(''),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState(''),[uploadProgress,setUploadProgress]=useState('');
  const [ordering,setOrdering]=useState(false),[orderIds,setOrderIds]=useState([]),[orderSaving,setOrderSaving]=useState(false),[draggingId,setDraggingId]=useState(null);
  const [deleteConfirmId,setDeleteConfirmId]=useState(null),[deletingOrderId,setDeletingOrderId]=useState(null);
  const arrangedProducts=ordering?orderIds.map(id=>products.find(p=>p.id===id)).filter(Boolean):products;
  useEffect(()=>{let cancelled=false;async function check(){setChecking(true);if(!session){setAuthorized(false);setChecking(false);return}const {data}=await supabase.from('ripiano_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();if(cancelled)return;setAuthorized(!!data);setChecking(false)}check();return()=>{cancelled=true}},[session?.user?.id]);
- useEffect(()=>{if(authorized){loadProducts();loadOrders()}},[authorized]);
+ useEffect(()=>{if(authorized){loadProducts();loadOrders();loadProjects()}},[authorized]);
  async function loadProducts(){const {data,error}=await supabase.from('ripiano_products').select('*').order('sort_order').order('id');if(!error)setProducts(data||[]);return !error}
  async function loadOrders(){const {data,error}=await supabase.from('ripiano_orders').select('*,ripiano_order_items(*)').order('created_at',{ascending:false});if(!error)setOrders(data||[])}
+
+ async function loadProjects(){
+  const {data,error}=await supabase.from('ripiano_custom_orders').select('*').order('created_at',{ascending:false});
+  if(error){console.error('RIPIANO projects load',error);setProjectsError('Не удалось загрузить заявки конструктора.');}
+  else{setProjects(data||[]);setProjectsError('');}
+ }
+ async function changeProjectStatus(id,status){
+  const {data,error}=await supabase.from('ripiano_custom_orders').update({status}).eq('id',id).select('id,status').maybeSingle();
+  if(error||!data){setProjectsError('Не получилось изменить статус заявки.');return;}
+  setProjects(previous=>previous.map(p=>p.id===id?{...p,status:data.status}:p));
+  setProjectsError('');
+ }
  async function authenticate(e){e.preventDefault();setAuthMessage('');setBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email,password});setAuthMessage(error?error.message:'Вход выполнен.')}catch(error){setAuthMessage(error.message||'Не удалось войти. Попробуйте ещё раз.')}finally{setBusy(false)}}
  function startEdit(p){
  setEditing(p?.id||'new');
@@ -352,7 +397,7 @@ function Admin({session,refresh}){
  if(checking)return <main className="admin-main"><p>Проверка доступа…</p></main>;
  if(!session)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Личный кабинет</h1><p>Только для владельца магазина.</p><form onSubmit={authenticate}><input type="email" value={email} placeholder="Email" onChange={e=>setEmail(e.target.value)} required/><input type="password" minLength={6} value={password} placeholder="Пароль" onChange={e=>setPassword(e.target.value)} required/><button className="btn-dark" disabled={busy}>{busy?'Входим…':'Войти'} <ArrowRight size={16}/></button></form>{authMessage&&<p className="admin-notice">{authMessage}</p>}</main>;
  if(!authorized)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Доступ не назначен</h1><p>Вы вошли как {session.user.email}. Для безопасного доступа к товарам и заказам владельца нужно отдельно добавить в список администраторов в Supabase.</p><button className="btn-outline" onClick={()=>supabase.auth.signOut()}>Выйти</button></main>;
- return <main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">RIPIANO / ПАНЕЛЬ ВЛАДЕЛЬЦА</span><h1>Управление магазином</h1></div><button onClick={()=>supabase.auth.signOut()} className="btn-outline"><LogOut size={16}/> Выйти</button></div><div className="admin-tabs"><button className={tab==='products'?'active':''} onClick={()=>{setTab('products');setEditing(null)}}><Package size={17}/> Товары</button><button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');setEditing(null)}}><ClipboardList size={17}/> Заказы {orders.filter(o=>o.status==='new').length>0?'('+orders.filter(o=>o.status==='new').length+')':''}</button></div>
+ return <main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">RIPIANO / ПАНЕЛЬ ВЛАДЕЛЬЦА</span><h1>Управление магазином</h1></div><button onClick={()=>supabase.auth.signOut()} className="btn-outline"><LogOut size={16}/> Выйти</button></div><div className="admin-tabs"><button className={tab==='products'?'active':''} onClick={()=>{setTab('products');setEditing(null)}}><Package size={17}/> Товары</button><button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');setEditing(null)}}><ClipboardList size={17}/> Заказы {orders.filter(o=>o.status==='new').length>0?'('+orders.filter(o=>o.status==='new').length+')':''}</button><button className={tab==='projects'?'active':''} onClick={()=>{setTab('projects');setEditing(null);loadProjects()}}><Layers size={17}/> Проекты {projects.filter(p=>p.status==='new').length>0?'('+projects.filter(p=>p.status==='new').length+')':''}</button></div>
  {notice&&<p className="admin-notice">{notice}</p>}
  {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><div className="admin-gallery-editor">
   <label>Фотографии товара (до 20)<input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy} onChange={uploadImages}/></label>
@@ -403,6 +448,7 @@ function Admin({session,refresh}){
   </div>:<button type="button" className="admin-edit-product" aria-label={'Редактировать '+p.name} onClick={()=>startEdit(p)}><Edit3 size={18}/></button>}
  </div>)}
  </div></>)}
+ {tab==='projects'&&<CustomProjects projects={projects} error={projectsError} onStatus={changeProjectStatus}/>}
  {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><div className="admin-order-actions">
  <select aria-label={'Статус заказа №'+o.id.slice(0,8)} value={o.status} disabled={!!deletingOrderId} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select>
  {deleteConfirmId!==o.id&&<button type="button" className="admin-order-delete-trigger" disabled={!!deletingOrderId} onClick={()=>{setDeleteConfirmId(o.id);setNotice('')}}><Trash2 size={16}/> Удалить заказ</button>}

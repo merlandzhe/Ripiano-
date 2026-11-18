@@ -1,0 +1,116 @@
+
+/* RIPIANO bespoke wardrobe configurator */
+.wc-page{width:min(1360px,calc(100% - 80px));margin:0 auto;padding:38px 0 110px;color:#1d1c1a}
+.wc-breadcrumb{display:flex;align-items:center;justify-content:space-between;gap:16px;color:#8d8982;font-size:10px;letter-spacing:.09em}
+.wc-breadcrumb button{display:flex;align-items:center;gap:7px;color:#555;letter-spacing:0;font-size:12px}
+.wc-eyebrow{font-size:10px;letter-spacing:.13em;color:#777168;font-weight:600}
+.wc-page-heading{display:flex;align-items:end;justify-content:space-between;gap:45px;padding:67px 0 42px}
+.wc-page-heading h1{font-size:clamp(42px,6.1vw,88px);line-height:.96;letter-spacing:-.067em;font-weight:750;margin:20px 0 0}
+.wc-page-heading>p{max-width:325px;line-height:1.62;font-size:14px;color:#62605b;margin:0 0 5px}
+.wc-workspace{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:26px;align-items:start}
+.wc-preview-column{min-width:0;position:sticky;top:24px}
+.wc-preview-card{background:#eeebe5;padding:24px;min-width:0}
+.wc-preview-header{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.wc-preview-header>div{display:flex;flex-direction:column;gap:7px}
+.wc-preview-header b{font-size:18px;letter-spacing:-.025em}
+.wc-reset{display:inline-flex;align-items:center;gap:5px;color:#65605a;font-size:11px;padding:6px 0}
+.wc-diagram{width:100%;max-width:650px;margin:12px auto 0;aspect-ratio:438/378}
+.wc-diagram svg{display:block;width:100%;height:100%;overflow:visible}
+.wc-preview-toggle{display:flex;background:#dfdad0;padding:4px;width:max-content;max-width:100%;margin:0 auto 16px;gap:3px}
+.wc-preview-toggle button{padding:9px 17px;font-size:12px;transition:background .18s}
+.wc-preview-toggle button.active{background:#faf9f6;font-weight:650}
+.wc-preview-note{display:flex;gap:10px;align-items:flex-start;color:#756f66;padding:15px 0 0;border-top:1px solid #d6d1c9;font-size:11px;line-height:1.45}
+.wc-preview-note svg{flex-shrink:0}
+.wc-controls{display:flex;flex-direction:column;gap:16px;min-width:0}
+.wc-control-card{background:#fff;border:1px solid #e5e1da;padding:25px}
+.wc-section-title{display:flex;gap:15px;align-items:baseline;border-bottom:1px solid #ebe8e2;padding-bottom:16px;margin-bottom:18px}
+.wc-section-title>span{font-size:11px;color:#a99e90}
+.wc-section-title h2{font-size:20px;font-weight:650;letter-spacing:-.025em;margin:0}
+.wc-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.wc-number{min-width:0;display:flex;flex-direction:column;gap:9px;font-size:12px;color:#68645e}
+.wc-number>div{display:flex;align-items:center;gap:5px;border:1px solid #d9d5cd;padding:11px 9px;background:#fbfaf7}
+.wc-number input{border:0;background:transparent;outline:0;width:100%;min-width:0;font-size:20px;font-weight:650;color:#1d1c1a;appearance:textfield;-moz-appearance:textfield}
+.wc-number input::-webkit-inner-spin-button,.wc-number input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.wc-number em{font-size:11px;font-style:normal;color:#827c73}
+.wc-hint{font-size:11px;color:#89837a;line-height:1.5;margin:13px 0 0}
+.wc-select-label{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#67625d;margin-bottom:18px}
+.wc-select-label select{width:100%;border:1px solid #d8d4cc;background:#fbfaf7;color:#25231f;padding:13px 11px;font-size:13px}
+.wc-section-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+.wc-section-tabs button{padding:10px 13px;border:1px solid #ddd8ce;background:#faf9f6;font-size:12px}
+.wc-section-tabs button.active{border-color:#282623;background:#282623;color:#fff}
+.wc-fills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:19px}
+.wc-fills button{border:1px solid #dedad3;padding:13px 11px;font-size:12px;text-align:left;background:#faf9f6;min-height:48px}
+.wc-fills button.active{border-color:#252321;background:#efebe4;font-weight:650}
+.wc-choice-field{border:0;padding:0;margin:0 0 20px;min-width:0}
+.wc-choice-field legend{font-size:12px;color:#6e6962;margin-bottom:10px}
+.wc-color-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.wc-color-choice{min-width:0;display:flex;align-items:center;gap:8px;padding:9px;text-align:left;border:1px solid #dfdbd3;background:#faf9f6;font-size:11px;min-height:47px}
+.wc-color-choice.active{border-color:#252321}
+.wc-color-choice>svg{margin-left:auto}
+.wc-swatch{width:23px;height:23px;flex:0 0 auto;display:block;border:1px solid #0002;border-radius:50%}
+.wc-quote{margin-top:70px;border-top:1px solid #ddd9d1;padding-top:30px}
+.wc-quote-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:27px}
+.wc-quote-heading h2{font-size:clamp(30px,4vw,51px);line-height:1.06;letter-spacing:-.04em;margin:15px 0}
+.wc-quote-heading p{font-size:13px;line-height:1.55;color:#777168;max-width:540px;margin:0}
+.wc-quote-price{display:flex;flex-direction:column;gap:7px;white-space:nowrap;text-align:right}
+.wc-quote-price span{font-size:11px;color:#7b766d}
+.wc-quote-price b{font-size:24px}
+.wc-quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+.wc-quote-drawing{background:#eeebe5;padding:22px}
+.wc-quote-drawing .wc-diagram{max-width:470px}
+.wc-details{display:grid;gap:7px;margin-top:10px}
+.wc-details>div{display:flex;gap:18px;justify-content:space-between;padding:8px 0;border-bottom:1px solid #dbd7d0;font-size:12px;line-height:1.4}
+.wc-details b{color:#5b554e;font-weight:600}
+.wc-details span{text-align:right}
+.wc-quote-form{display:flex;flex-direction:column;gap:14px}
+.wc-quote-form label{display:flex;flex-direction:column;gap:8px;font-size:12px;color:#555}
+.wc-quote-form input,.wc-quote-form textarea{background:#fff;border:1px solid #dcd8d0;font-size:14px;padding:15px 14px;width:100%;border-radius:0;outline-color:#9d8e7b;color:#25231f}
+.wc-primary{background:#22211f;color:#fff;min-height:54px;display:flex;align-items:center;justify-content:center;gap:13px;padding:14px 17px;font-size:13px;font-weight:650}
+.wc-primary:disabled{opacity:.6;cursor:wait}
+.wc-quote-form>small{color:#868077;font-size:11px;line-height:1.6}
+.wc-honeypot{position:absolute!important;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;left:-9999px}
+.wc-error{color:#ac3d39;font-size:12px;line-height:1.5;margin:0}
+.wc-success{padding:30px;min-height:280px;background:#e9eee7;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.wc-success h3{margin:0;font-size:24px}
+.wc-success p{font-size:13px;line-height:1.6;color:#536052}
+.wc-success .wc-primary{margin-top:auto}
+.wc-admin-item .wc-diagram{width:100%;max-width:330px;margin:0}
+.wc-admin-item .wc-details{margin:0;width:100%;max-width:500px}
+.wc-admin-item .wc-details>div{font-size:11px}
+.wc-admin-item .wc-diagram{background:#f0ece5}
+@media(max-width:920px){
+ .wc-page{width:calc(100% - 44px);padding-bottom:70px}
+ .wc-workspace{gap:14px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .wc-preview-card{padding:15px}
+ .wc-control-card{padding:17px}
+ .wc-quote-grid{gap:18px}
+}
+@media(max-width:680px){
+ .wc-page{width:100%;padding:20px 16px 65px}
+ .wc-breadcrumb{font-size:9px}
+ .wc-page-heading{display:block;padding:45px 0 30px}
+ .wc-page-heading h1{font-size:46px}
+ .wc-page-heading>p{font-size:13px;margin:20px 0 0;max-width:355px}
+ .wc-workspace{display:flex;flex-direction:column;gap:12px}
+ .wc-preview-column{width:100%;position:static}
+ .wc-preview-card{padding:16px}
+ .wc-preview-header b{font-size:16px}
+ .wc-controls{width:100%;gap:12px}
+ .wc-control-card{padding:18px}
+ .wc-section-title h2{font-size:19px}
+ .wc-numbers{gap:8px}
+ .wc-number>div{padding:8px 7px}
+ .wc-number input{font-size:17px}
+ .wc-section-tabs button{padding:10px;font-size:11px}
+ .wc-quote{margin-top:40px;padding-top:25px}
+ .wc-quote-heading{display:block}
+ .wc-quote-heading h2{font-size:36px}
+ .wc-quote-price{margin-top:18px;text-align:left}
+ .wc-quote-grid{display:flex;flex-direction:column;gap:18px}
+ .wc-quote-drawing,.wc-quote-form,.wc-success{width:100%}
+ .wc-quote-drawing{padding:14px}
+ .wc-details>div{font-size:11px}
+ .wc-quote-form input,.wc-quote-form textarea{font-size:16px}
+ .wc-primary{min-height:51px}
+ .wc-admin-item .wc-diagram{max-width:300px}
+}
