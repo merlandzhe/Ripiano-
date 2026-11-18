@@ -84,7 +84,7 @@ function FurnitureDrawing({config}){
    </>}
    {kind==='desk'&&<>
      <rect x={x-4} y={y+3} width={w+8} height="10" fill={body} stroke="#988b7d" strokeWidth="1.3"/>
-     {c.leg_style==='metal'?<>
+     {c.leg_style==='metal'?
        <><rect x={x+12} y={y+13} width="5" height={h-13} fill="#464544"/><rect x={x+w-17} y={y+13} width="5" height={h-13} fill="#464544"/><rect x={x+13} y={y+h-8} width={w-26} height="4" fill="#464544"/></>
      :<><rect x={x+9} y={y+13} width="8" height={h-13} fill={body} stroke="#a89a8c"/><rect x={x+w-17} y={y+13} width="8" height={h-13} fill={body} stroke="#a89a8c"/></>}
      {dcount>0&&c.drawer_side!=='none'&&(()=>{
