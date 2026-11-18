@@ -149,3 +149,42 @@
  .admin-gallery-actions{padding:5px}
  .admin-gallery-move button{width:29px;height:29px}
 }
+
+
+/* RIPIANO showroom / brand contact information */
+.ripiano-about{max-width:1130px;padding-bottom:105px}
+.ripiano-about>p{max-width:690px}
+.ripiano-contact-section{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7vw;margin-top:95px;padding-top:46px;border-top:1px solid #dbd8d2}
+.ripiano-contact-intro h2{font-size:clamp(27px,3.1vw,44px);font-weight:700;line-height:1.18;letter-spacing:-.045em;margin:16px 0 0}
+.ripiano-contact-info{display:flex;flex-direction:column;align-items:flex-start;gap:25px}
+.ripiano-contact-detail{display:flex;align-items:flex-start;gap:16px;width:100%}
+.ripiano-contact-detail>svg{flex:none;margin-top:2px;color:#74695f}
+.ripiano-contact-detail>div{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5}
+.ripiano-contact-detail b{font-size:13px;line-height:1.4;font-weight:700}
+.ripiano-contact-detail span,.ripiano-contact-detail a{color:#4c4b46}
+.ripiano-contact-detail a{text-decoration:underline;text-underline-offset:3px}
+.ripiano-contact-detail small{color:#8e8982;font-size:11px}
+.ripiano-contact-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.ripiano-contact-links .btn-dark,.ripiano-contact-links .btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-size:11px;min-height:46px}
+.ripiano-footer{display:grid;grid-template-columns:1.2fr .9fr 1fr;align-items:start;gap:36px}
+.ripiano-footer .ripiano-footer-brand small{line-height:1.7}
+.ripiano-footer .ripiano-footer-nav{display:flex;flex-direction:column;align-items:flex-start;gap:12px;font-size:12px}
+.ripiano-footer .ripiano-footer-contacts{display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.5}
+.ripiano-footer-contacts a{text-decoration:underline;text-decoration-color:#9a938c;text-underline-offset:3px}
+.ripiano-footer .ripiano-footer-copyright{grid-column:1 / -1;margin-top:3px;color:#777;font-size:11px}
+@media(max-width:680px){
+ .ripiano-about{padding:80px 18px 65px;width:100%}
+ .ripiano-about>p{font-size:15px}
+ .ripiano-contact-section{grid-template-columns:1fr;gap:27px;margin-top:65px;padding-top:34px}
+ .ripiano-contact-intro h2{font-size:29px}
+ .ripiano-contact-info{gap:22px}
+ .ripiano-contact-detail>div{font-size:13px}
+ .ripiano-contact-links{width:100%;gap:9px}
+ .ripiano-contact-links .btn-dark{width:100%}
+ .ripiano-contact-links .btn-outline{width:100%}
+ .ripiano-footer{grid-template-columns:1fr 1fr;gap:26px 14px;padding:34px 20px}
+ .ripiano-footer .ripiano-footer-brand{grid-column:1/-1}
+ .ripiano-footer .ripiano-footer-nav{gap:11px;align-items:flex-start}
+ .ripiano-footer .ripiano-footer-contacts{gap:9px}
+ .ripiano-footer .ripiano-footer-copyright{grid-column:1/-1;margin-top:4px}
+}

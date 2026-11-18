@@ -1,11 +1,17 @@
 
 import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
-import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical} from 'lucide-react';
+import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical, MapPin, MessageCircle, Instagram} from 'lucide-react';
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
 const categories=['Все','Комплекты мебели','Кухни','Комоды','Прикроватные тумбы','Шкафы','Гардеробные','Столы','Стеллажи','Журнальные столики','Настенные полки','Вешалки'];
+const ripianoContacts={
+ whatsapp:'https://wa.me/79651003900',
+ instagram:'https://www.instagram.com/ripiano_shop/',
+ phone:'+7 (965) 100-39-00',
+ showroom:'Чеченская Республика, с. Толстой-Юрт, посёлок №2, 41'
+};
 function Photo({product,className='',style={}}){
  return <div className={'photo '+className} style={style}><img src={product.image_url||'/images/no-photo.svg'} alt={product.name} loading="lazy" onError={e=>{if(!e.currentTarget.src.endsWith('no-photo.svg'))e.currentTarget.src='/images/no-photo.svg'}}/></div>;
 }
@@ -117,9 +123,32 @@ function App(){
   </section>
  </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p></div></div></main>
  :route==='/admin'?<Admin session={session} refresh={fetchProducts}/>
- :route==='/about'?<main className="about-main"><span className="eyebrow">RIPIANO / О НАС</span><h1>Мебель для вашего пространства.</h1><p>Корпусная мебель, созданная с вниманием к деталям. Каталог готовых изделий и индивидуальные заказы.</p><button className="btn-dark" onClick={()=>toRoute('/catalog')}>Смотреть каталог <ArrowRight size={16}/></button></main>
+ :route==='/about'?<main className="about-main ripiano-about">
+  <span className="eyebrow">RIPIANO / МЕБЕЛЬ & ШОУРУМ</span>
+  <h1>Мебель для вашего пространства.</h1>
+  <p>RIPIANO — корпусная мебель от производителя. Готовые изделия в наличии и мебель под заказ для дома и бизнеса.</p>
+  <button className="btn-dark" onClick={()=>toRoute('/catalog')}>Смотреть каталог <ArrowRight size={16}/></button>
+  <section className="ripiano-contact-section" aria-label="Контакты и шоурум">
+    <div className="ripiano-contact-intro"><span className="eyebrow">RIPIANO / КОНТАКТЫ</span><h2>Приходите в шоурум<br/>или напишите нам.</h2></div>
+    <div className="ripiano-contact-info">
+      <div className="ripiano-contact-detail"><MapPin size={21}/><div><b>Шоурум открыт</b><span>{ripianoContacts.showroom}</span></div></div>
+      <div className="ripiano-contact-detail"><MessageCircle size={21}/><div><b>WhatsApp</b><a href={ripianoContacts.whatsapp} target="_blank" rel="noopener noreferrer">{ripianoContacts.phone}</a><small>Напишите — отправим каталог</small></div></div>
+      <div className="ripiano-contact-detail"><Instagram size={21}/><div><b>Instagram</b><a href={ripianoContacts.instagram} target="_blank" rel="noopener noreferrer">@ripiano_shop</a></div></div>
+      <div className="ripiano-contact-links"><a className="btn-dark" href={ripianoContacts.whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle size={17}/> Написать в WhatsApp <ArrowRight size={16}/></a><a className="btn-outline" href={ripianoContacts.instagram} target="_blank" rel="noopener noreferrer"><Instagram size={17}/> Наш Instagram</a></div>
+    </div>
+  </section>
+ </main>
  :<main className="empty-state"><button onClick={()=>toRoute('/')}>На главную</button></main>}
- <footer className="footer"><div><div className="footer-brand">RIPIANO</div><small>Мебель для жизни.</small></div><div><button onClick={()=>toRoute('/catalog')}>Каталог</button><button onClick={()=>toRoute('/about')}>О бренде</button><button onClick={()=>toRoute('/admin')}>Владельцу</button></div><span>© RIPIANO 2026</span></footer>
+ <footer className="footer ripiano-footer">
+  <div className="ripiano-footer-brand"><div className="footer-brand">RIPIANO</div><small>Корпусная мебель от производителя.<br/>В наличии и под заказ.</small></div>
+  <div className="ripiano-footer-nav"><button onClick={()=>toRoute('/catalog')}>Каталог</button><button onClick={()=>toRoute('/about')}>О нас и шоурум</button><button onClick={()=>toRoute('/admin')}>Владельцу</button></div>
+  <div className="ripiano-footer-contacts">
+   <span>ЧР, с. Толстой-Юрт, посёлок №2, 41</span>
+   <a href={ripianoContacts.whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp · {ripianoContacts.phone}</a>
+   <a href={ripianoContacts.instagram} target="_blank" rel="noopener noreferrer">Instagram · @ripiano_shop</a>
+  </div>
+  <span className="ripiano-footer-copyright">© RIPIANO 2026</span>
+ </footer>
  {cartOpen&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setCartOpen(false)}}><aside className="cart-drawer"><header><h2>КОРЗИНА <span>({count})</span></h2><button onClick={()=>setCartOpen(false)} aria-label="Закрыть"><X/></button></header><div className="cart-lines">{entries.length?entries.map(({product:p,quantity})=><div className="cart-line" key={p.id}><Photo product={p}/><div className="cart-line-data"><b>{p.name}</b><span>{money(p.price)}</span><div className="quantity"><button onClick={()=>adjust(p.id,-1)}><Minus size={14}/></button>{quantity}<button onClick={()=>adjust(p.id,1)}><Plus size={14}/></button></div></div><button className="remove" title="Удалить" onClick={()=>adjust(p.id,-quantity)}><Trash2 size={17}/></button></div>):<div className="empty-cart">Корзина пока пуста.<br/>Добавьте мебель из каталога.</div>}</div>{entries.length>0&&<Checkout entries={entries} total={total} onDone={()=>{setCart({});setCartOpen(false)}}/>}</aside></div>}
  </div>
 }
