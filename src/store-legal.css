@@ -1,0 +1,37 @@
+
+/* RIPIANO legal seller details + shop purchase information */
+.rl-page{width:min(1060px,calc(100% - 72px));margin:0 auto;padding:43px 0 100px}
+.rl-breadcrumb{display:flex;align-items:center;gap:9px;color:#89837c;font-size:12px}
+.rl-breadcrumb>button{display:flex;align-items:center;gap:6px;color:inherit}
+.rl-page h1{font-size:clamp(43px,7vw,95px);line-height:1;letter-spacing:-.065em;margin:76px 0 23px}
+.rl-lead{font-size:15px;line-height:1.7;max-width:560px;color:#6b6863;margin:0 0 37px}
+.rl-warning{display:flex;align-items:start;gap:12px;padding:18px 20px;background:#eee8dc;color:#554b3e;font-size:12px;line-height:1.55;margin:20px 0}
+.rl-warning svg{flex:0 0 auto}
+.rl-values{max-width:800px;border-top:1px solid #d9d4cd;margin:27px 0;padding:0}
+.rl-pair{display:grid;grid-template-columns:minmax(140px,.9fr) minmax(0,1.1fr);gap:18px;padding:19px 0;border-bottom:1px solid #e2dcd5;font-size:13px;line-height:1.6}
+.rl-pair dt{color:#848077}.rl-pair dd{margin:0;overflow-wrap:anywhere}
+.rl-missing{color:#a35e42}
+.rl-caption{font-size:12px;max-width:700px;line-height:1.75;color:#848077;margin:24px 0}
+.rl-copy{max-width:780px;border-top:1px solid #ddd7d0;padding-top:30px}
+.rl-copy section{margin:0 0 34px}
+.rl-copy h2{font-size:22px;margin:0 0 13px;letter-spacing:-.02em}
+.rl-copy p{color:#5f5c56;font-size:14px;line-height:1.8;margin:0 0 12px}
+.rl-link{display:inline-flex;align-items:center;gap:10px;border-bottom:1px solid currentColor;padding:6px 0;font-size:13px}
+.rl-admin{max-width:800px;min-height:260px}
+.rl-admin h2{font-size:25px;margin:6px 0 9px}
+.rl-admin>p{font-size:12px;color:#69645d;line-height:1.65;margin-bottom:25px}
+.rl-admin form{display:flex;flex-direction:column;gap:18px}
+.rl-admin label{display:flex;flex-direction:column;gap:8px;color:#555;font-size:12px}
+.rl-admin input{width:100%;padding:13px 14px;border:1px solid #d8d4ce;background:#fff;font-size:14px;color:#1a1a19;min-height:46px}
+.rl-admin .btn-dark{display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:start}
+.rl-status{color:#625949;font-size:12px;background:#f1eee6;padding:13px}
+@media(max-width:680px){
+ .rl-page{width:calc(100% - 32px);padding:25px 0 65px}
+ .rl-page h1{font-size:clamp(41px,12vw,65px);margin:55px 0 18px}
+ .rl-lead{font-size:13px;margin-bottom:28px}
+ .rl-pair{display:block;font-size:12px;padding:13px 0}
+ .rl-pair dt{margin-bottom:7px}
+ .rl-copy h2{font-size:19px}
+ .rl-copy p{font-size:12px;line-height:1.75}
+ .rl-admin .btn-dark{align-self:stretch}
+}

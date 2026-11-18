@@ -219,7 +219,7 @@ export function PortfolioAdmin({supabase}){
     <label>Описание<textarea rows={4} value={form.description} maxLength={3000} placeholder="Опишите выполненный проект…" onChange={e=>setForm({...form,description:e.target.value})}/></label>
     <div className="rp-admin-photos">
      <label>Фотографии работы (до 20)<input type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={uploadPhotos}/></label>
-     <small>Первое фото будет обложкой. Можно выбрать несколько снимков сразу.</small>
+     <small>Первое фото будет обложкой. Можно выбрать несколько снимков сразу. Публикуйте только фотографии, на которые у RIPIANO есть права, и не размещайте личные данные клиентов без надлежащего основания.</small>
      {uploadStatus&&<p role="status">{uploadStatus}</p>}
      {workImages(form).length>0&&<div className="rp-admin-photos-grid">{workImages(form).map((src,i)=><div className="rp-admin-photo" key={src+'-'+i}>
       <img src={src} alt={'Фотография '+(i+1)} loading="lazy"/>

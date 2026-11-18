@@ -3,6 +3,7 @@ import React,{useState} from 'react';
 import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
 import './wardrobe-configurator.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
+import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 
 const COLOR_OPTIONS=[
@@ -196,7 +197,7 @@ export default function WardrobeConfigurator({supabase}){
   <section className="wc-quote" id="request">
    <div className="wc-quote-heading"><div><span className="wc-eyebrow">04 / ВАШ ПРОЕКТ</span><h2>ПОЛУЧИТЬ РАСЧЁТ</h2><p>Оставьте телефон — менеджер RIPIANO проверит эскиз, уточнит материалы и назовёт стоимость. Никакой предоплаты.</p></div><div className="wc-quote-price"><span>Стоимость</span><b>По запросу</b></div></div>
    <div className="wc-quote-grid"><div className="wc-quote-drawing"><WardrobePreview config={config} doors={false}/><WardrobeDetails config={config}/></div>
-    {submitted?<div className="wc-success" role="status"><Check size={34}/><h3>Проект отправлен</h3><p>Спасибо! Менеджер свяжется с вами для расчёта. Ваши размеры и наполнение сохранены в заявке.</p><button className="wc-primary" type="button" onClick={()=>{setSubmitted(false);setName('');setPhone('');setNote('')}}>Отправить ещё один проект</button></div>
+    {!REQUESTS_ENABLED?<OnlineRequestsPaused/>:submitted?<div className="wc-success" role="status"><Check size={34}/><h3>Проект отправлен</h3><p>Спасибо! Менеджер свяжется с вами для расчёта. Ваши размеры и наполнение сохранены в заявке.</p><button className="wc-primary" type="button" onClick={()=>{setSubmitted(false);setName('');setPhone('');setNote('')}}>Отправить ещё один проект</button></div>
     :<form className="wc-quote-form" onSubmit={submit}>
       <label>Как к вам обращаться<input type="text" required maxLength={120} minLength={2} placeholder="Ваше имя" value={name} onChange={e=>setName(e.target.value)}/></label>
       <label>Телефон для связи<input type="tel" required inputMode="tel" minLength={7} maxLength={35} placeholder="+7 999 000-00-00" value={phone} onChange={e=>setPhone(e.target.value)}/></label>

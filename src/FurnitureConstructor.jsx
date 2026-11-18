@@ -5,6 +5,7 @@ import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeCo
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 import './furniture-constructor.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
+import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 
 const TYPES=[
  {id:'wardrobe',name:'Шкаф',title:'СВОЙ ШКАФ',label:'Шкаф на заказ'},
@@ -205,7 +206,7 @@ function CustomFurniture({kind,supabase}){
    <div className="wc-quote-heading"><div><span className="wc-eyebrow">04 / ЗАЯВКА НА ИЗГОТОВЛЕНИЕ</span><h2>ПОЛУЧИТЬ РАСЧЁТ</h2><p>Выбираете мебель и параметры, мы согласуем конструкцию и стоимость. Оплата на сайте не списывается.</p></div><div className="wc-quote-price"><span>Стоимость</span><b>По запросу</b></div></div>
    <div className="wc-quote-grid">
     <div className="wc-quote-drawing"><FurnitureDrawing config={config}/><FurnitureDetails config={config}/></div>
-    {submitted?<div className="wc-success" role="status"><Check size={34}/><h3>Проект отправлен</h3><p>Спасибо! Менеджер RIPIANO свяжется с вами, уточнит изготовление и рассчитает стоимость.</p><button type="button" className="wc-primary" onClick={()=>{setSubmitted(false);setName('');setPhone('');setNote('')}}>Создать ещё одну заявку</button></div>
+    {!REQUESTS_ENABLED?<OnlineRequestsPaused/>:submitted?<div className="wc-success" role="status"><Check size={34}/><h3>Проект отправлен</h3><p>Спасибо! Менеджер RIPIANO свяжется с вами, уточнит изготовление и рассчитает стоимость.</p><button type="button" className="wc-primary" onClick={()=>{setSubmitted(false);setName('');setPhone('');setNote('')}}>Создать ещё одну заявку</button></div>
     :<form className="wc-quote-form" onSubmit={submit}>
       <label>Ваше имя<input required minLength={2} maxLength={120} placeholder="Как к вам обращаться" value={name} onChange={e=>setName(e.target.value)}/></label>
       <label>Телефон<input required type="tel" inputMode="tel" minLength={7} maxLength={35} placeholder="+7 999 000-00-00" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
