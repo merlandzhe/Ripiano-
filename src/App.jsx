@@ -231,12 +231,22 @@ function Checkout({entries,total,onDone}){
  return <div className="checkout"><div className="checkout-total"><span>Итого</span><strong>{money(total)}</strong></div>{entries.some(x=>x.product.price===null)&&<p className="quote-warning">Часть товаров — по запросу. Финальную сумму подтвердит менеджер.</p>}{done?<div className="checkout-success"><Check size={28}/><b>Заявка отправлена</b><span>Мы свяжемся с вами для подтверждения.</span><button className="btn-dark" onClick={onDone}>Готово</button></div>:<form onSubmit={submit}><h3>Оформить заказ</h3><input required maxLength={120} minLength={2} placeholder="Ваше имя" value={name} onChange={e=>setName(e.target.value)}/><input required type="tel" minLength={7} maxLength={35} placeholder="Телефон" value={phone} onChange={e=>setPhone(e.target.value)}/><input maxLength={400} placeholder="Город / адрес (по желанию)" value={address} onChange={e=>setAddress(e.target.value)}/><textarea maxLength={1500} placeholder="Комментарий к заказу" rows={2} value={note} onChange={e=>setNote(e.target.value)}/>{error&&<p className="error">{error}</p>}<button className="btn-dark" disabled={sending}>{sending?'Отправляем…':'Отправить заявку'} <ArrowRight size={17}/></button><small>Оплата не списывается. Заказ подтвердит менеджер.</small></form>}</div>;
 }
 
-function CustomProjects({projects,onStatus,error}){
+function CustomProjects({projects,onStatus,onDelete,error}){
  const statusLabels={new:'Новый',contacted:'Связались',quoted:'Рассчитано',completed:'Завершён',cancelled:'Отменён'};
  const [pending,setPending]=useState(null);
+ const [confirmDeleteId,setConfirmDeleteId]=useState(null);
+ const [deletingId,setDeletingId]=useState(null);
  const update=async(id,status)=>{
   setPending(id);
   try{await onStatus(id,status)}finally{setPending(null)}
+ };
+ const remove=async(id)=>{
+  if(deletingId||confirmDeleteId!==id)return;
+  setDeletingId(id);
+  try{
+   const deleted=await onDelete(id);
+   if(deleted)setConfirmDeleteId(null);
+  }finally{setDeletingId(null)}
  };
  return <div className="wc-admin-projects">
   <p className="wc-admin-info">Сюда поступают проекты шкафов, комодов, стеллажей и столов. Цены рассчитывает производитель после проверки эскиза и материалов.</p>
@@ -248,10 +258,21 @@ function CustomProjects({projects,onStatus,error}){
     {item.note&&<p>Пожелания: {item.note}</p>}
     <div className="wc-admin-project-body"><FurniturePreview config={item.configuration}/><FurnitureDetails config={item.configuration}/></div>
     <div className="wc-admin-project-bottom"><b>Стоимость: по запросу</b>
-      <label>Статус <select value={item.status} disabled={pending===item.id} onChange={e=>update(item.id,e.target.value)}>
+      <label>Статус <select value={item.status} disabled={pending===item.id||!!deletingId} onChange={e=>update(item.id,e.target.value)}>
         {Object.entries(statusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
       </select></label>
     </div>
+    {confirmDeleteId!==item.id?
+      <div className="wc-admin-project-actions">
+       <button type="button" className="admin-order-delete-trigger" disabled={!!deletingId} onClick={()=>setConfirmDeleteId(item.id)}><Trash2 size={16}/> Удалить проект</button>
+      </div>
+    :<div className="admin-order-delete-confirm" role="group" aria-label={'Подтвердить удаление проекта '+item.id.slice(0,8)}>
+      <p>Удалить проект №{item.id.slice(0,8).toUpperCase()}? Заявка, размеры и контакты клиента будут удалены без возможности восстановления.</p>
+      <div className="admin-order-delete-buttons">
+       <button type="button" className="admin-order-delete-cancel" disabled={!!deletingId} onClick={()=>setConfirmDeleteId(null)}>Отмена</button>
+       <button type="button" className="admin-order-delete-approve" disabled={!!deletingId} onClick={()=>remove(item.id)}>{deletingId===item.id?'Удаляем…':'Да, удалить'}</button>
+      </div>
+     </div>}
   </article>)}
  </div>;
 }
@@ -277,6 +298,20 @@ function Admin({session,refresh}){
   if(error||!data){setProjectsError('Не получилось изменить статус заявки.');return;}
   setProjects(previous=>previous.map(p=>p.id===id?{...p,status:data.status}:p));
   setProjectsError('');
+ }
+ async function deleteCustomProject(id){
+  setProjectsError('');
+  try{
+   const {data,error}=await supabase.from('ripiano_custom_orders').delete().eq('id',id).select('id').maybeSingle();
+   if(error)throw error;
+   if(!data)throw new Error('Проект не найден или нет прав на удаление');
+   setProjects(current=>current.filter(p=>p.id!==id));
+   return true;
+  }catch(error){
+   console.error('RIPIANO delete custom project',error);
+   setProjectsError('Не удалось удалить проект: '+(error.message||'попробуйте ещё раз'));
+   return false;
+  }
  }
  async function authenticate(e){e.preventDefault();setAuthMessage('');setBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email,password});setAuthMessage(error?error.message:'Вход выполнен.')}catch(error){setAuthMessage(error.message||'Не удалось войти. Попробуйте ещё раз.')}finally{setBusy(false)}}
  function startEdit(p){
@@ -493,7 +528,7 @@ function Admin({session,refresh}){
   </div>:<button type="button" className="admin-edit-product" aria-label={'Редактировать '+p.name} onClick={()=>startEdit(p)}><Edit3 size={18}/></button>}
  </div>)}
  </div></>)}
- {tab==='projects'&&<CustomProjects projects={projects} error={projectsError} onStatus={changeProjectStatus}/>}
+ {tab==='projects'&&<CustomProjects projects={projects} error={projectsError} onStatus={changeProjectStatus} onDelete={deleteCustomProject}/>}
  {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><div className="admin-order-actions">
  <select aria-label={'Статус заказа №'+o.id.slice(0,8)} value={o.status} disabled={!!deletingOrderId} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select>
  {deleteConfirmId!==o.id&&<button type="button" className="admin-order-delete-trigger" disabled={!!deletingOrderId} onClick={()=>{setDeleteConfirmId(o.id);setNotice('')}}><Trash2 size={16}/> Удалить заказ</button>}

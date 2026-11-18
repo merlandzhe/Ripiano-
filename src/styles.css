@@ -313,3 +313,13 @@
  .catalog-constructor-link{font-size:9px;font-weight:400}
  .catalog-entry-row .breadcrumbs{font-size:9px}
 }
+
+
+/* RIPIANO admin: destructive project action follows each configuration */
+.wc-admin-project-actions{display:flex;justify-content:flex-end;align-items:center;margin-top:16px}
+.wc-admin-project-actions .admin-order-delete-trigger{min-height:41px;font-size:12px}
+.wc-admin-item .admin-order-delete-confirm{margin-top:14px}
+@media(max-width:680px){
+ .wc-admin-project-actions{justify-content:stretch}
+ .wc-admin-project-actions .admin-order-delete-trigger{width:100%;min-height:43px}
+}
