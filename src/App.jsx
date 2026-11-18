@@ -1,7 +1,7 @@
 
 import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
-import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
+import FurnitureConstructor,{FurniturePreview,FurnitureDetails} from './FurnitureConstructor.jsx';
 import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical, MapPin, MessageCircle, Instagram, Layers} from 'lucide-react';
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
@@ -122,13 +122,13 @@ function App(){
    {!loading&&(!visible.length||route==='/favorites'&&!favorites.length)&&<div className="empty-state">В этой категории пока нет товаров.</div>}
    <p className="catalog-count">ПОКАЗАНО {route==='/favorites'?favorites.length:visible.length} ИЗ {products.filter(p=>p.active).length} ТОВАРОВ</p>
    <div className="catalog-bespoke">
-    <div><span className="eyebrow">RIPIANO / МЕБЕЛЬ НА ЗАКАЗ</span><h2>Шкаф под ваши размеры.</h2><p>Соберите шкаф из секций, выберите наполнение и отделку. Покажем эскиз и рассчитаем стоимость.</p></div>
+    <div><span className="eyebrow">RIPIANO / МЕБЕЛЬ НА ЗАКАЗ</span><h2>Мебель по вашим размерам.</h2><p>Создайте шкаф, комод, стеллаж или письменный стол по своим размерам. Покажем эскиз и рассчитаем изготовление.</p></div>
     <button className="btn-dark" onClick={()=>toRoute('/constructor')}>Открыть конструктор <ArrowRight size={17}/></button>
    </div>
   </section>
- </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p>{selected.category==='Шкафы'&&<button type="button" className="detail-custom-link" onClick={()=>toRoute('/constructor')}>Нужен шкаф другого размера? Создать на заказ <ArrowRight size={15}/></button>}</div></div></main>
+ </main>:selected?<main className="detail-main"><button className="back-link" onClick={()=>toRoute('/catalog')}><ArrowLeft size={17}/> Вернуться в каталог</button><div className="detail-grid"><ProductGallery product={selected}/><div className="detail-info"><span className="eyebrow">RIPIANO / {selected.category}</span><h1>{selected.name}</h1><div className="detail-price">{money(selected.price)}</div><p>{selected.description}</p>{selected.specifications?.dimensions&&<div className="spec-row"><span>Размеры</span><span>{selected.specifications.dimensions}</span></div>}<div className="detail-actions"><button className="btn-dark" onClick={()=>addCart(selected.id)}>В корзину <ShoppingBag size={17}/></button><button className="btn-icon" title="В избранное" onClick={()=>toggleFavorite(selected.id)}><Heart size={20} fill={favorites.includes(selected.id)?'currentColor':'none'}/></button></div><p className="tiny-note">Стоимость и наличие уточняются при оформлении заказа.</p>{selected.category==='Шкафы'&&<button type="button" className="detail-custom-link" onClick={()=>toRoute('/constructor')}>Нужен другой размер? Создать на заказ <ArrowRight size={15}/></button>}</div></div></main>
  :route==='/admin'?<Admin session={session} refresh={fetchProducts}/>
- :route==='/constructor'?<WardrobeConfigurator supabase={supabase}/>
+ :route==='/constructor'?<FurnitureConstructor supabase={supabase}/>
  :route==='/about'?<main className="about-main ripiano-about">
   <span className="eyebrow">RIPIANO / О НАС</span>
   <h1>Мебель для вашего пространства.</h1>
@@ -227,14 +227,14 @@ function CustomProjects({projects,onStatus,error}){
   try{await onStatus(id,status)}finally{setPending(null)}
  };
  return <div className="wc-admin-projects">
-  <p className="wc-admin-info">Сюда поступают заявки из конструктора. Цены рассчитывает производитель после проверки эскиза и материалов.</p>
+  <p className="wc-admin-info">Сюда поступают проекты шкафов, комодов, стеллажей и столов. Цены рассчитывает производитель после проверки эскиза и материалов.</p>
   {error&&<p className="admin-notice">{error}</p>}
-  {projects.length===0?<div className="empty-state">Заявок на изготовление шкафов пока нет.</div>
+  {projects.length===0?<div className="empty-state">Заявок на изготовление мебели пока нет.</div>
   :projects.map(item=><article className="admin-order wc-admin-item" key={item.id}>
-    <div className="order-top"><b>Проект №{item.id.slice(0,8).toUpperCase()}</b><span>{new Date(item.created_at).toLocaleString('ru-RU')}</span></div>
+    <div className="order-top"><b>{({wardrobe:'Шкаф',dresser:'Комод',shelf:'Стеллаж',desk:'Стол'})[item.configuration?.kind]||'Шкаф'} · проект №{item.id.slice(0,8).toUpperCase()}</b><span>{new Date(item.created_at).toLocaleString('ru-RU')}</span></div>
     <div className="wc-admin-customer"><b>{item.customer_name}</b><a href={'tel:'+item.phone}>{item.phone}</a></div>
     {item.note&&<p>Пожелания: {item.note}</p>}
-    <div className="wc-admin-project-body"><WardrobePreview config={item.configuration}/><WardrobeDetails config={item.configuration}/></div>
+    <div className="wc-admin-project-body"><FurniturePreview config={item.configuration}/><FurnitureDetails config={item.configuration}/></div>
     <div className="wc-admin-project-bottom"><b>Стоимость: по запросу</b>
       <label>Статус <select value={item.status} disabled={pending===item.id} onChange={e=>update(item.id,e.target.value)}>
         {Object.entries(statusLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
