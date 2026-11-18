@@ -1,0 +1,119 @@
+/* RIPIANO editorial portfolio & owner portfolio management */
+.rp-portfolio{max-width:1440px;width:calc(100% - 84px);margin:0 auto;padding:40px 0 100px}
+.rp-portfolio-breadcrumb{display:flex;align-items:center;gap:8px;font-size:12px;color:#93908a}
+.rp-portfolio-breadcrumb button{color:inherit}
+.rp-portfolio-intro{display:flex;align-items:end;justify-content:space-between;gap:55px;padding:90px 0 58px}
+.rp-eyebrow{color:#858079;font-size:10px;font-weight:500;letter-spacing:.1em}
+.rp-portfolio-intro h1{font-size:clamp(56px,9vw,134px);line-height:.88;letter-spacing:-.077em;font-weight:750;margin:24px 0 0}
+.rp-portfolio-intro>p{max-width:345px;font-size:14px;line-height:1.7;color:#6c6964;margin:0 0 7px}
+.rp-portfolio-filters{display:flex;gap:17px;align-items:center;overflow-x:auto;white-space:nowrap;scrollbar-width:none;border-top:1px solid #dfdcd5;padding:23px 0 27px}
+.rp-portfolio-filters::-webkit-scrollbar{display:none}
+.rp-portfolio-filters button{font-size:12px;color:#77716b;border-bottom:1px solid transparent;padding:6px 0;white-space:nowrap}
+.rp-portfolio-filters button.active{color:#20201e;border-color:#242320}
+.rp-work-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:70px 26px}
+.rp-work-card{min-width:0;display:flex;flex-direction:column;align-items:stretch}
+.rp-work-featured{grid-column:1/-1}
+.rp-work-image{display:block;position:relative;width:100%;padding:0;text-align:left;overflow:hidden;background:#ebe7e1}
+.rp-work-image img{display:block;width:100%;aspect-ratio:1.2;object-fit:cover;transition:transform .35s}
+.rp-work-image:hover img{transform:scale(1.025)}
+.rp-work-featured .rp-work-image img{aspect-ratio:1.9}
+.rp-work-photo-count{display:flex;align-items:center;gap:5px;position:absolute;bottom:13px;right:13px;color:#171715;background:#f9f8f3e8;padding:7px 9px;font-size:11px}
+.rp-work-caption{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-top:15px}
+.rp-work-category{font-size:10px;color:#8b857d;letter-spacing:.025em}
+.rp-work-caption h2{font-size:clamp(17px,1.75vw,24px);line-height:1.2;font-weight:600;letter-spacing:-.02em;margin:6px 0 0}
+.rp-work-caption>button{padding:5px;flex-shrink:0}
+.rp-work-description{font-size:12px;line-height:1.65;color:#726c65;max-width:640px;margin:12px 0 0}
+.rp-work-details{display:flex;gap:6px 19px;flex-wrap:wrap;margin-top:11px;font-size:11px;color:#716b64}
+.rp-work-details b{font-weight:500;color:#3a3835}
+.rp-work-inquiry{display:inline-flex;gap:6px;align-items:center;align-self:flex-start;font-size:11px;text-decoration:underline;text-underline-offset:3px;margin-top:18px}
+.rp-portfolio-state{padding:55px 0;color:#77716b;line-height:1.6}
+.rp-portfolio-empty{min-height:360px;padding:65px 20px;border-top:1px solid #ddd9d1;display:flex;align-items:center;flex-direction:column;text-align:center}
+.rp-portfolio-empty h2{font-weight:600;font-size:clamp(22px,3vw,32px);margin:19px 0 7px}
+.rp-portfolio-empty p{max-width:460px;line-height:1.7;font-size:13px;color:#756f68}
+.rp-portfolio-empty>div{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.rp-dark-button,.rp-outline-button{display:inline-flex;gap:10px;align-items:center;justify-content:center;min-height:49px;padding:12px 19px;background:#252421;color:#fff;font-size:12px}
+.rp-outline-button{background:transparent;color:#272622;border:1px solid #c7c2b9}
+.rp-portfolio-cta{border-top:1px solid #ddd9d1;margin-top:100px;padding:45px 0;display:flex;align-items:end;justify-content:space-between;gap:20px}
+.rp-portfolio-cta h2{font-size:clamp(29px,4vw,57px);letter-spacing:-.05em;line-height:1.1;margin:16px 0 0}
+.rp-lightbox{position:fixed;inset:0;background:#111111ed;z-index:10000;display:flex;align-items:center;justify-content:center;padding:15px}
+.rp-lightbox-inner{width:min(1100px,100%);max-height:calc(100dvh - 30px);display:flex;flex-direction:column}
+.rp-lightbox-top{display:flex;justify-content:space-between;align-items:center;color:white;gap:12px;padding:8px 2px 17px}
+.rp-lightbox-top>div{display:flex;gap:7px;flex-direction:column;min-width:0}
+.rp-lightbox-top b{font-size:15px;font-weight:600}
+.rp-lightbox-top span{font-size:11px;color:#ddd}
+.rp-lightbox-top button{padding:10px}
+.rp-lightbox-image{display:flex;align-items:center;justify-content:space-between;min-height:0;gap:9px;flex:1}
+.rp-lightbox-image img{max-width:100%;max-height:calc(100dvh - 185px);object-fit:contain;min-width:0;flex:1}
+.rp-lightbox-image button{color:white;background:#ffffff18;border-radius:50%;padding:9px;display:grid;place-items:center;flex:none}
+.rp-lightbox-thumbs{display:flex;gap:8px;justify-content:center;overflow-x:auto;max-height:78px;margin-top:15px}
+.rp-lightbox-thumbs button{flex:none;opacity:.55;border:1px solid transparent}
+.rp-lightbox-thumbs button.active{opacity:1;border-color:#eee}
+.rp-lightbox-thumbs img{width:52px;height:52px;object-fit:cover;display:block}
+.rp-admin{padding:16px 0 50px}
+.rp-admin-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px}
+.rp-admin-head h2{font-size:27px;margin:0}
+.rp-admin-head p{font-size:12px;line-height:1.6;color:#777;margin:9px 0 0}
+.rp-admin-head>.btn-dark{display:flex;align-items:center;gap:9px;white-space:nowrap;font-size:12px}
+.rp-admin-empty{display:flex;align-items:center;flex-direction:column;justify-content:center;min-height:280px;background:#f3f1eb;text-align:center;gap:12px;color:#666}
+.rp-admin-empty button{display:flex;align-items:center;gap:6px;font-size:12px;text-decoration:underline}
+.rp-admin-state{color:#777;font-size:12px}
+.rp-admin-list{display:flex;flex-direction:column;gap:15px}
+.rp-admin-list-item{border:1px solid #e0dbd3;display:grid;grid-template-columns:105px minmax(0,1fr) auto;gap:17px;padding:13px;align-items:center}
+.rp-admin-list-image{height:90px;background:#eeebe6;display:grid;place-items:center;overflow:hidden}
+.rp-admin-list-image img{width:100%;height:100%;object-fit:cover}
+.rp-admin-list-info{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12px}
+.rp-admin-list-info b{font-size:14px;line-height:1.4}
+.rp-admin-list-info span{color:#777}
+.rp-admin-list-actions{display:flex;gap:13px;flex-wrap:wrap}
+.rp-admin-list-actions button{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.rp-admin-list-actions .rp-admin-delete{color:#9a4237}
+.rp-admin-delete-confirm{grid-column:1/-1;margin-top:3px}
+.rp-admin-photos{display:flex;flex-direction:column;gap:8px}
+.rp-admin-photos>label{display:flex;flex-direction:column;gap:9px;font-size:12px}
+.rp-admin-photos>small{color:#888;font-size:11px}
+.rp-admin-photos-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:10px}
+.rp-admin-photo{min-width:0;border:1px solid #ddd8cf;padding:6px}
+.rp-admin-photo>img{width:100%;aspect-ratio:1;object-fit:cover;background:#eee;display:block}
+.rp-admin-photo>span{display:block;font-size:11px;margin-top:7px}
+.rp-admin-photo-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:5px}
+.rp-admin-photo-buttons button{display:grid;place-items:center;min-height:28px;min-width:26px;font-size:10px}
+.rp-admin-photo-buttons button:disabled{opacity:.3}
+.rp-admin-photo-buttons button:first-child:not(:last-child){font-size:10px}
+.rp-admin-published{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;justify-content:flex-start}
+.rp-admin-published input{width:18px;height:18px;accent-color:#252421}
+.rp-admin-editor-actions{display:flex;gap:10px;flex-wrap:wrap}
+.rp-admin-editor-actions button{display:inline-flex;align-items:center;gap:8px}
+@media(max-width:720px){
+ .rp-portfolio{width:calc(100% - 32px);padding:26px 0 65px}
+ .rp-portfolio-breadcrumb{font-size:11px}
+ .rp-portfolio-intro{display:block;padding:53px 0 37px}
+ .rp-portfolio-intro h1{font-size:clamp(50px,14vw,80px);margin-top:17px}
+ .rp-portfolio-intro>p{font-size:13px;max-width:350px;margin:23px 0 0}
+ .rp-portfolio-filters{gap:17px;padding:16px 0 21px}
+ .rp-work-grid{gap:45px 12px}
+ .rp-work-image img{aspect-ratio:.87}
+ .rp-work-featured .rp-work-image img{aspect-ratio:1.28}
+ .rp-work-caption{gap:5px;margin-top:10px}
+ .rp-work-caption h2{font-size:14px}
+ .rp-work-category{font-size:9px}
+ .rp-work-caption>button{padding:4px}
+ .rp-work-description{font-size:11px;line-height:1.5;margin-top:9px}
+ .rp-work-details{font-size:10px;gap:4px 9px}
+ .rp-work-photo-count{font-size:9px;right:7px;bottom:7px;padding:5px 6px}
+ .rp-work-photo-count svg{width:12px;height:12px}
+ .rp-work-inquiry{font-size:10px;margin-top:13px}
+ .rp-portfolio-cta{margin-top:65px;display:block;padding-top:28px}
+ .rp-portfolio-cta h2{font-size:36px}
+ .rp-portfolio-cta button{margin-top:24px;width:100%}
+ .rp-lightbox{padding:9px}
+ .rp-lightbox-image{gap:3px}
+ .rp-lightbox-image button{padding:5px}
+ .rp-lightbox-image img{max-height:calc(100dvh - 165px)}
+ .rp-admin-head{align-items:flex-start;flex-direction:column}
+ .rp-admin-head>.btn-dark{width:100%;justify-content:center}
+ .rp-admin-list-item{grid-template-columns:82px minmax(0,1fr);gap:12px;padding:10px}
+ .rp-admin-list-image{height:88px}
+ .rp-admin-list-actions{grid-column:1/-1;justify-content:flex-end;border-top:1px solid #e7e3de;padding-top:10px}
+ .rp-admin-photos-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rp-admin-editor-actions button{flex:1}
+}
