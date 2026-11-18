@@ -6,6 +6,15 @@ import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHoriz
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
+
+/** Generate a URL-safe product slug from a Russian or Latin product name. */
+function makeProductSlug(name){
+ const latin={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+ const value=Array.from(String(name||'').trim().toLowerCase()).map(char=>latin[char]??char).join('')
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+ return value.slice(0,72).replace(/-+$/,'')||'tovar';
+}
+
 const categories=['Все','Комплекты мебели','Кухни','Комоды','Прикроватные тумбы','Шкафы','Гардеробные','Столы','Стеллажи','Журнальные столики','Настенные полки','Вешалки'];
 const ripianoContacts={
  whatsapp:'https://wa.me/79651003900',
@@ -272,15 +281,48 @@ function Admin({session,refresh}){
  async function authenticate(e){e.preventDefault();setAuthMessage('');setBusy(true);try{const {error}=await supabase.auth.signInWithPassword({email,password});setAuthMessage(error?error.message:'Вход выполнен.')}catch(error){setAuthMessage(error.message||'Не удалось войти. Попробуйте ещё раз.')}finally{setBusy(false)}}
  function startEdit(p){
  setEditing(p?.id||'new');
- setForm(p?{name:p.name,slug:p.slug,category:p.category,price:p.price??'',description:p.description||'',
+ setForm(p?{name:p.name,category:p.category,price:p.price??'',description:p.description||'',
  image_url:p.image_url||'',gallery:Array.isArray(p.gallery)?p.gallery.filter(x=>typeof x==='string'&&x.trim()):[],
  dimensions:p.specifications?.dimensions||'',active:p.active,sort_order:p.sort_order??100,specifications:p.specifications||{}}:emptyForm());
  setNotice('');setUploadProgress('');window.scrollTo({top:0,behavior:'smooth'});
 }
- async function saveProduct(e){e.preventDefault();setBusy(true);setNotice('');
-  const payload={name:form.name.trim(),slug:form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'),category:form.category,price:form.price===''?null:Number(form.price),description:form.description,image_url:form.image_url,gallery:form.gallery,active:form.active,sort_order:Number(form.sort_order??100),specifications:{...form.specifications,dimensions:form.dimensions}};
-  const req=editing==='new'?supabase.from('ripiano_products').insert(payload):supabase.from('ripiano_products').update(payload).eq('id',editing);
-  const {error}=await req;setBusy(false);if(error){setNotice('Ошибка: '+error.message)}else{setEditing(null);setNotice('Товар сохранён');loadProducts();refresh()}}
+ async function saveProduct(e){
+  e.preventDefault();
+  if(busy)return;
+  setBusy(true);
+  setNotice('');
+  const payload={name:form.name.trim(),category:form.category,price:form.price===''?null:Number(form.price),description:form.description,image_url:form.image_url,gallery:form.gallery,active:form.active,sort_order:Number(form.sort_order??100),specifications:{...form.specifications,dimensions:form.dimensions}};
+  try{
+   if(!payload.name){setNotice('Укажите название товара.');return;}
+   let error=null;
+   if(editing==='new'){
+    const base=makeProductSlug(payload.name);
+    const existing=new Set(products.map(p=>p.slug));
+    let suffix=1;
+    for(let attempt=0;attempt<30;attempt++){
+     let candidate=suffix===1?base:base+'-'+suffix;
+     while(existing.has(candidate)){suffix++;candidate=base+'-'+suffix;}
+     const result=await supabase.from('ripiano_products').insert({...payload,slug:candidate});
+     if(!result.error){error=null;break;}
+     error=result.error;
+     if(error.code!=='23505')break;
+     existing.add(candidate);
+     suffix++;
+    }
+   }else{
+    // Keep the original URL of existing products, even if their name changes.
+    const result=await supabase.from('ripiano_products').update(payload).eq('id',editing);
+    error=result.error;
+   }
+   if(error){setNotice('Ошибка сохранения: '+error.message);return;}
+   setEditing(null);
+   setNotice('Товар сохранён');
+   await Promise.all([loadProducts(),refresh()]);
+  }catch(error){
+   console.error('Product save failed',error);
+   setNotice('Не удалось сохранить товар. Попробуйте ещё раз.');
+  }finally{setBusy(false);}
+ }
 
  function beginOrdering(){
   setOrderIds(products.map(p=>p.id));
@@ -402,7 +444,7 @@ function Admin({session,refresh}){
  if(!authorized)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Доступ не назначен</h1><p>Вы вошли как {session.user.email}. Для безопасного доступа к товарам и заказам владельца нужно отдельно добавить в список администраторов в Supabase.</p><button className="btn-outline" onClick={()=>supabase.auth.signOut()}>Выйти</button></main>;
  return <main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">RIPIANO / ПАНЕЛЬ ВЛАДЕЛЬЦА</span><h1>Управление магазином</h1></div><button onClick={()=>supabase.auth.signOut()} className="btn-outline"><LogOut size={16}/> Выйти</button></div><div className="admin-tabs"><button className={tab==='products'?'active':''} onClick={()=>{setTab('products');setEditing(null)}}><Package size={17}/> Товары</button><button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');setEditing(null)}}><ClipboardList size={17}/> Заказы {orders.filter(o=>o.status==='new').length>0?'('+orders.filter(o=>o.status==='new').length+')':''}</button><button className={tab==='projects'?'active':''} onClick={()=>{setTab('projects');setEditing(null);loadProjects()}}><Layers size={17}/> Проекты {projects.filter(p=>p.status==='new').length>0?'('+projects.filter(p=>p.status==='new').length+')':''}</button></div>
  {notice&&<p className="admin-notice">{notice}</p>}
- {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><div className="admin-gallery-editor">
+ {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><div className="admin-gallery-editor">
   <label>Фотографии товара (до 20)<input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy} onChange={uploadImages}/></label>
   <p className="admin-gallery-help">Выберите несколько фото сразу или добавляйте постепенно. Первое фото — обложка, остальные — галерея.</p>
   {uploadProgress&&<p className="admin-gallery-progress" role="status">{uploadProgress}</p>}
@@ -465,5 +507,5 @@ function Admin({session,refresh}){
  </div>}</div>)}</div>}
  </main>;
 }
-function emptyForm(){return {name:'',slug:'',category:'Стеллажи',price:'',description:'',image_url:'',gallery:[],dimensions:'',active:true,sort_order:100,specifications:{spriteIndex:-1}}}
+function emptyForm(){return {name:'',category:'Стеллажи',price:'',description:'',image_url:'',gallery:[],dimensions:'',active:true,sort_order:100,specifications:{spriteIndex:-1}}}
 export default App;
