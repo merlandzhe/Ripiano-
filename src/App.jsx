@@ -132,7 +132,7 @@ function Checkout({entries,total,onDone}){
 }
 function Admin({session,refresh}){
  const [authorized,setAuthorized]=useState(false),[checking,setChecking]=useState(true),[mode,setMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMessage,setAuthMessage]=useState(''),[busy,setBusy]=useState(false);
- const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState('');
+ const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState(''),[uploadProgress,setUploadProgress]=useState('');
  const [ordering,setOrdering]=useState(false),[orderIds,setOrderIds]=useState([]),[orderSaving,setOrderSaving]=useState(false),[draggingId,setDraggingId]=useState(null);
  const arrangedProducts=ordering?orderIds.map(id=>products.find(p=>p.id===id)).filter(Boolean):products;
  useEffect(()=>{let cancelled=false;async function check(){setChecking(true);if(!session){setAuthorized(false);setChecking(false);return}const {data}=await supabase.from('ripiano_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();if(cancelled)return;setAuthorized(!!data);setChecking(false)}check();return()=>{cancelled=true}},[session?.user?.id]);
@@ -140,9 +140,15 @@ function Admin({session,refresh}){
  async function loadProducts(){const {data,error}=await supabase.from('ripiano_products').select('*').order('sort_order').order('id');if(!error)setProducts(data||[]);return !error}
  async function loadOrders(){const {data,error}=await supabase.from('ripiano_orders').select('*,ripiano_order_items(*)').order('created_at',{ascending:false});if(!error)setOrders(data||[])}
  async function authenticate(e){e.preventDefault();setAuthMessage('');setBusy(true);const {error}=mode==='signup'?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});setBusy(false);setAuthMessage(error?error.message:(mode==='signup'?'Проверьте почту и подтвердите регистрацию. Доступ к панели будет предоставлен владельцем.':'Вход выполнен.'))}
- function startEdit(p){setEditing(p?.id||'new');setForm(p?{name:p.name,slug:p.slug,category:p.category,price:p.price??'',description:p.description||'',image_url:p.image_url||'',dimensions:p.specifications?.dimensions||'',active:p.active,sort_order:p.sort_order||100,specifications:p.specifications||{}}:emptyForm());setNotice('');window.scrollTo({top:0,behavior:'smooth'})}
+ function startEdit(p){
+ setEditing(p?.id||'new');
+ setForm(p?{name:p.name,slug:p.slug,category:p.category,price:p.price??'',description:p.description||'',
+ image_url:p.image_url||'',gallery:Array.isArray(p.gallery)?p.gallery.filter(x=>typeof x==='string'&&x.trim()):[],
+ dimensions:p.specifications?.dimensions||'',active:p.active,sort_order:p.sort_order??100,specifications:p.specifications||{}}:emptyForm());
+ setNotice('');setUploadProgress('');window.scrollTo({top:0,behavior:'smooth'});
+}
  async function saveProduct(e){e.preventDefault();setBusy(true);setNotice('');
-  const payload={name:form.name.trim(),slug:form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'),category:form.category,price:form.price===''?null:Number(form.price),description:form.description,image_url:form.image_url,active:form.active,sort_order:Number(form.sort_order)||100,specifications:{...form.specifications,dimensions:form.dimensions}};
+  const payload={name:form.name.trim(),slug:form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'),category:form.category,price:form.price===''?null:Number(form.price),description:form.description,image_url:form.image_url,gallery:form.gallery,active:form.active,sort_order:Number(form.sort_order??100),specifications:{...form.specifications,dimensions:form.dimensions}};
   const req=editing==='new'?supabase.from('ripiano_products').insert(payload):supabase.from('ripiano_products').update(payload).eq('id',editing);
   const {error}=await req;setBusy(false);if(error){setNotice('Ошибка: '+error.message)}else{setEditing(null);setNotice('Товар сохранён');loadProducts();refresh()}}
 
@@ -205,19 +211,67 @@ function Admin({session,refresh}){
   }
  }
 
- async function uploadImage(e){const file=e.target.files?.[0];if(!file)return;if(!['image/png','image/webp','image/jpeg'].includes(file.type)||file.size>10*1024*1024){setNotice('Допустимы JPG, PNG, WebP до 10 МБ');return}setBusy(true);
- const path=crypto.randomUUID()+'-'+file.name.replace(/[^a-zA-Z0-9_.-]/g,'');
- const {error}=await supabase.storage.from('ripiano-products').upload(path,file,{cacheControl:'3600'});
- setBusy(false);if(error){setNotice('Ошибка загрузки: '+error.message);return}
- const {data}=supabase.storage.from('ripiano-products').getPublicUrl(path);
- setForm(f=>({...f,image_url:data.publicUrl,specifications:{...f.specifications,spriteIndex:-1}}));setNotice('Фотография загружена. Не забудьте сохранить товар.')}
+ function photoUrls(f){return [f.image_url,...(Array.isArray(f.gallery)?f.gallery:[])].filter(x=>typeof x==='string'&&x.trim());}
+ function setPhotoUrls(arr){setForm(f=>({...f,image_url:arr[0]||'',gallery:arr.slice(1)}))}
+ function movePhoto(from,to){
+  if(busy)return;
+  const arr=photoUrls(form);
+  if(to<0||to>=arr.length)return;
+  const [url]=arr.splice(from,1);
+  arr.splice(to,0,url);
+  setPhotoUrls(arr);
+ }
+ function removePhoto(index){if(!busy)setPhotoUrls(photoUrls(form).filter((_,i)=>i!==index))}
+ async function uploadImages(e){
+  const files=Array.from(e.target.files||[]);
+  e.target.value='';
+  if(!files.length||busy)return;
+  setNotice('');
+  if(files.length+photoUrls(form).length>20){setNotice('Не более 20 фотографий на товар');return}
+  if(files.some(f=>!['image/png','image/webp','image/jpeg'].includes(f.type)||f.size===0||f.size>10*1024*1024)){setNotice('Только JPG, PNG, WebP до 10 МБ каждое');return}
+  setBusy(true);
+  let uploaded=[],failure=null;
+  for(let i=0;i<files.length;i++){
+   const f=files[i];
+   setUploadProgress('Загрузка '+(i+1)+' из '+files.length);
+   try{
+    const ext=f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg';
+    const key=crypto.randomUUID()+'.'+ext;
+    const {error}=await supabase.storage.from('ripiano-products').upload(key,f,{cacheControl:'3600',contentType:f.type,upsert:false});
+    if(error)throw error;
+    const {data}=supabase.storage.from('ripiano-products').getPublicUrl(key);
+    uploaded.push(data.publicUrl);
+   }catch(err){failure=err;break}
+  }
+  if(uploaded.length)setForm(f=>{const all=photoUrls(f).concat(uploaded);return {...f,image_url:all[0]||'',gallery:all.slice(1)}});
+  setBusy(false);setUploadProgress('');
+  setNotice(failure?'Загружено '+uploaded.length+' из '+files.length+': '+(failure.message||'ошибка'):'Загружено '+uploaded.length+' фото. Нажмите «Сохранить товар» для публикации.');
+ }
  async function setOrder(id,status){const {error}=await supabase.from('ripiano_orders').update({status}).eq('id',id);if(!error)loadOrders()}
  if(checking)return <main className="admin-main"><p>Проверка доступа…</p></main>;
  if(!session)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Личный кабинет</h1><p>Только для владельца магазина.</p><form onSubmit={authenticate}><input type="email" value={email} placeholder="Email" onChange={e=>setEmail(e.target.value)} required/><input type="password" minLength={6} value={password} placeholder="Пароль" onChange={e=>setPassword(e.target.value)} required/><button className="btn-dark" disabled={busy}>{mode==='signup'?'Зарегистрироваться':'Войти'} <ArrowRight size={16}/></button></form><button className="linklike" onClick={()=>{setMode(mode==='login'?'signup':'login');setAuthMessage('')}}>{mode==='login'?'Зарегистрировать аккаунт':'Уже есть аккаунт? Войти'}</button>{authMessage&&<p className="admin-notice">{authMessage}</p>}</main>;
  if(!authorized)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Доступ не назначен</h1><p>Вы вошли как {session.user.email}. Для безопасного доступа к товарам и заказам владельца нужно отдельно добавить в список администраторов в Supabase.</p><button className="btn-outline" onClick={()=>supabase.auth.signOut()}>Выйти</button></main>;
  return <main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">RIPIANO / ПАНЕЛЬ ВЛАДЕЛЬЦА</span><h1>Управление магазином</h1></div><button onClick={()=>supabase.auth.signOut()} className="btn-outline"><LogOut size={16}/> Выйти</button></div><div className="admin-tabs"><button className={tab==='products'?'active':''} onClick={()=>{setTab('products');setEditing(null)}}><Package size={17}/> Товары</button><button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');setEditing(null)}}><ClipboardList size={17}/> Заказы {orders.filter(o=>o.status==='new').length>0?'('+orders.filter(o=>o.status==='new').length+')':''}</button></div>
  {notice&&<p className="admin-notice">{notice}</p>}
- {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><label>Фото товара<input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label>{form.image_url&&<div className="uploaded-preview"><img src={form.image_url} alt="" onError={e=>e.currentTarget.style.display='none'}/><small>{form.image_url}</small></div>}<div className="editor-row"><label>Порядок<input type="number" value={form.sort_order} onChange={e=>setForm({...form,sort_order:e.target.value})}/></label><label className="checkbox"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Показывать в магазине</label></div><button type="submit" className="btn-dark" disabled={busy}>{busy?'Сохраняем…':'Сохранить товар'} <Check size={18}/></button></form>:<><div className="admin-tools">
+ {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><div className="admin-gallery-editor">
+  <label>Фотографии товара (до 20)<input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy} onChange={uploadImages}/></label>
+  <p className="admin-gallery-help">Выберите несколько фото сразу или добавляйте постепенно. Первое фото — обложка, остальные — галерея.</p>
+  {uploadProgress&&<p className="admin-gallery-progress" role="status">{uploadProgress}</p>}
+  {photoUrls(form).length>0&&<div className="admin-gallery-grid">
+   {photoUrls(form).map((src,i)=><div className="admin-gallery-item" key={src+'-'+i}>
+    <img src={src} alt={'Фото '+(i+1)} loading="lazy"/>
+    <b>{i===0?'Главное фото':'Фото '+(i+1)}</b>
+    <div className="admin-gallery-actions">
+     {i!==0&&<button type="button" onClick={()=>movePhoto(i,0)} disabled={busy}>На обложку</button>}
+     <span className="admin-gallery-move">
+      <button type="button" onClick={()=>movePhoto(i,i-1)} disabled={busy||i===0} title="Раньше" aria-label={'Раньше фото '+(i+1)}><ArrowLeft size={15}/></button>
+      <button type="button" onClick={()=>movePhoto(i,i+1)} disabled={busy||i===photoUrls(form).length-1} title="Позже" aria-label={'Позже фото '+(i+1)}><ArrowRight size={15}/></button>
+      <button type="button" onClick={()=>removePhoto(i)} disabled={busy} title="Удалить" aria-label={'Убрать фото '+(i+1)}><X size={15}/></button>
+     </span>
+    </div>
+   </div>)}
+  </div>}
+ </div><div className="editor-row"><label>Порядок<input type="number" value={form.sort_order} onChange={e=>setForm({...form,sort_order:e.target.value})}/></label><label className="checkbox"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Показывать в магазине</label></div><button type="submit" className="btn-dark" disabled={busy}>{busy?'Сохраняем…':'Сохранить товар'} <Check size={18}/></button></form>:<><div className="admin-tools">
   <p>{products.length} товаров в каталоге</p>
   <div className="admin-tool-buttons">
    {ordering?<>
@@ -251,5 +305,5 @@ function Admin({session,refresh}){
  {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><select value={o.status} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select></div>)}</div>}
  </main>;
 }
-function emptyForm(){return {name:'',slug:'',category:'Стеллажи',price:'',description:'',image_url:'',dimensions:'',active:true,sort_order:100,specifications:{spriteIndex:-1}}}
+function emptyForm(){return {name:'',slug:'',category:'Стеллажи',price:'',description:'',image_url:'',gallery:[],dimensions:'',active:true,sort_order:100,specifications:{spriteIndex:-1}}}
 export default App;
