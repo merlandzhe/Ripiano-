@@ -39,3 +39,71 @@
  .featured-info{font-size:10px;gap:3px;padding-top:6px;min-height:41px}
  .featured-price{font-size:10px}
 }
+
+
+/* RIPIANO editorial mosaic: varied furniture photography proportions like the SONDRE reference.
+   Explicit grid tracks keep cards aligned, dense flow closes gaps and all actions remain clickable. */
+.products-grid.mosaic-grid{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ grid-auto-rows:8px;
+ grid-auto-flow:dense;
+ gap:10px 13px;
+ align-items:stretch;
+}
+.mosaic-grid>.product-tile{
+ grid-column:span 1;
+ grid-row:span 18;
+ display:flex;
+ flex-direction:column;
+ min-height:0;
+ min-width:0;
+ overflow:visible;
+}
+.mosaic-grid>.product-tile.mosaic-tile-0{grid-column:span 2;grid-row:span 23}
+.mosaic-grid>.product-tile.mosaic-tile-1{grid-row:span 23}
+.mosaic-grid>.product-tile.mosaic-tile-2{grid-row:span 17}
+.mosaic-grid>.product-tile.mosaic-tile-3{grid-row:span 19}
+.mosaic-grid>.product-tile.mosaic-tile-4{grid-column:span 2;grid-row:span 21}
+.mosaic-grid>.product-tile.mosaic-tile-5{grid-row:span 20}
+.mosaic-grid>.product-tile.mosaic-tile-6{grid-row:span 17}
+.mosaic-grid>.product-tile.mosaic-tile-7{grid-row:span 24}
+.mosaic-grid>.product-tile.mosaic-tile-8{grid-column:span 2;grid-row:span 20}
+.mosaic-grid>.product-tile.mosaic-tile-9{grid-row:span 19}
+.mosaic-grid>.product-tile.mosaic-tile-10{grid-row:span 17}
+.mosaic-grid>.product-tile.mosaic-tile-11{grid-row:span 22}
+.mosaic-grid .product-image-btn{flex:1 1 0;min-height:0;height:auto;position:relative;overflow:hidden}
+.mosaic-grid .product-image-btn .photo{width:100%;height:100%;aspect-ratio:auto}
+.mosaic-grid .product-image-btn .photo img{width:100%;height:100%;object-fit:cover}
+.mosaic-grid .product-meta{flex:0 0 43px;margin:8px 0 0;display:flex;align-items:flex-start;gap:8px;min-width:0;font-size:11px;line-height:1.3}
+.mosaic-grid .product-meta button{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-align:left;word-break:normal}
+.mosaic-grid .product-meta span{flex-shrink:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mosaic-grid .tile-actions{opacity:1;top:10px;right:10px}
+@media(min-width:681px) and (max-width:1000px){
+ .products-grid.mosaic-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ .mosaic-grid>.product-tile.mosaic-tile-0,.mosaic-grid>.product-tile.mosaic-tile-4,.mosaic-grid>.product-tile.mosaic-tile-8{grid-column:span 2}
+ .mosaic-grid .product-meta{font-size:10px}
+}
+@media(max-width:680px){
+ .products-grid.mosaic-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:7px;gap:8px}
+ .mosaic-grid>.product-tile{grid-column:span 1;grid-row:span 17}
+ .mosaic-grid>.product-tile.mosaic-tile-0{grid-column:span 2;grid-row:span 25}
+ .mosaic-grid>.product-tile.mosaic-tile-1{grid-row:span 21}
+ .mosaic-grid>.product-tile.mosaic-tile-2{grid-row:span 16}
+ .mosaic-grid>.product-tile.mosaic-tile-3{grid-row:span 19}
+ .mosaic-grid>.product-tile.mosaic-tile-4{grid-column:span 2;grid-row:span 23}
+ .mosaic-grid>.product-tile.mosaic-tile-5{grid-row:span 19}
+ .mosaic-grid>.product-tile.mosaic-tile-6{grid-row:span 16}
+ .mosaic-grid>.product-tile.mosaic-tile-7{grid-row:span 22}
+ .mosaic-grid>.product-tile.mosaic-tile-8{grid-column:span 2;grid-row:span 24}
+ .mosaic-grid>.product-tile.mosaic-tile-9{grid-row:span 18}
+ .mosaic-grid>.product-tile.mosaic-tile-10{grid-row:span 16}
+ .mosaic-grid>.product-tile.mosaic-tile-11{grid-row:span 21}
+ .mosaic-grid .product-meta{flex:0 0 46px;display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:10px;line-height:1.25}
+ .mosaic-grid .product-meta button{max-width:100%}
+ .mosaic-grid .product-meta span{text-align:left;font-size:10px}
+ .mosaic-grid .tile-actions{top:7px;right:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .mosaic-grid .product-image-btn:hover img{transform:none}
+}
