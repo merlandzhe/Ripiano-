@@ -110,7 +110,7 @@ function App(){
   <section className="catalog-shell" id="catalog">
    <div className="catalog-entry-row">
     <div className="breadcrumbs"><button onClick={()=>toRoute('/')}>Главная</button> / Каталог</div>
-    <button type="button" className="catalog-constructor-link" onClick={()=>toRoute('/constructor')}>Конструктор на заказ <ArrowRight size={16} aria-hidden="true"/></button>
+    <button type="button" className="catalog-constructor-link" onClick={()=>toRoute('/constructor')}>Конструктор на заказ</button>
    </div>
    <div className="catalog-intro"><h1>{route==='/favorites'?'ИЗБРАННОЕ':'КАТАЛОГ'}</h1><p>Современная мебель для<br/>пространства, в котором хочется жить.</p></div>
    <div className="filters">
