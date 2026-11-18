@@ -171,6 +171,7 @@ function Admin({session,refresh}){
  const [authorized,setAuthorized]=useState(false),[checking,setChecking]=useState(true),[mode,setMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMessage,setAuthMessage]=useState(''),[busy,setBusy]=useState(false);
  const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState(''),[uploadProgress,setUploadProgress]=useState('');
  const [ordering,setOrdering]=useState(false),[orderIds,setOrderIds]=useState([]),[orderSaving,setOrderSaving]=useState(false),[draggingId,setDraggingId]=useState(null);
+ const [deleteConfirmId,setDeleteConfirmId]=useState(null),[deletingOrderId,setDeletingOrderId]=useState(null);
  const arrangedProducts=ordering?orderIds.map(id=>products.find(p=>p.id===id)).filter(Boolean):products;
  useEffect(()=>{let cancelled=false;async function check(){setChecking(true);if(!session){setAuthorized(false);setChecking(false);return}const {data}=await supabase.from('ripiano_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();if(cancelled)return;setAuthorized(!!data);setChecking(false)}check();return()=>{cancelled=true}},[session?.user?.id]);
  useEffect(()=>{if(authorized){loadProducts();loadOrders()}},[authorized]);
@@ -285,6 +286,25 @@ function Admin({session,refresh}){
   setNotice(failure?'Загружено '+uploaded.length+' из '+files.length+': '+(failure.message||'ошибка'):'Загружено '+uploaded.length+' фото. Нажмите «Сохранить товар» для публикации.');
  }
  async function setOrder(id,status){const {error}=await supabase.from('ripiano_orders').update({status}).eq('id',id);if(!error)loadOrders()}
+ async function deleteOrder(id){
+  if(deletingOrderId||deleteConfirmId!==id)return;
+  setDeletingOrderId(id);
+  setNotice('');
+  try{
+   const {data,error}=await supabase.from('ripiano_orders').delete().eq('id',id).select('id').maybeSingle();
+   if(error)throw error;
+   if(!data)throw new Error('Заказ не найден или нет прав на его удаление');
+   setOrders(current=>current.filter(order=>order.id!==id));
+   setDeleteConfirmId(null);
+   setNotice('Заказ №'+id.slice(0,8).toUpperCase()+' удалён.');
+   await loadOrders();
+  }catch(error){
+   console.error('Ошибка удаления заказа',error);
+   setNotice('Не удалось удалить заказ: '+(error.message||'попробуйте ещё раз'));
+  }finally{
+   setDeletingOrderId(null);
+  }
+ }
  if(checking)return <main className="admin-main"><p>Проверка доступа…</p></main>;
  if(!session)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Личный кабинет</h1><p>Только для владельца магазина.</p><form onSubmit={authenticate}><input type="email" value={email} placeholder="Email" onChange={e=>setEmail(e.target.value)} required/><input type="password" minLength={6} value={password} placeholder="Пароль" onChange={e=>setPassword(e.target.value)} required/><button className="btn-dark" disabled={busy}>{mode==='signup'?'Зарегистрироваться':'Войти'} <ArrowRight size={16}/></button></form><button className="linklike" onClick={()=>{setMode(mode==='login'?'signup':'login');setAuthMessage('')}}>{mode==='login'?'Зарегистрировать аккаунт':'Уже есть аккаунт? Войти'}</button>{authMessage&&<p className="admin-notice">{authMessage}</p>}</main>;
  if(!authorized)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Доступ не назначен</h1><p>Вы вошли как {session.user.email}. Для безопасного доступа к товарам и заказам владельца нужно отдельно добавить в список администраторов в Supabase.</p><button className="btn-outline" onClick={()=>supabase.auth.signOut()}>Выйти</button></main>;
@@ -339,7 +359,17 @@ function Admin({session,refresh}){
   </div>:<button type="button" className="admin-edit-product" aria-label={'Редактировать '+p.name} onClick={()=>startEdit(p)}><Edit3 size={18}/></button>}
  </div>)}
  </div></>)}
- {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><select value={o.status} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select></div>)}</div>}
+ {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><div className="admin-order-actions">
+ <select aria-label={'Статус заказа №'+o.id.slice(0,8)} value={o.status} disabled={!!deletingOrderId} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select>
+ {deleteConfirmId!==o.id&&<button type="button" className="admin-order-delete-trigger" disabled={!!deletingOrderId} onClick={()=>{setDeleteConfirmId(o.id);setNotice('')}}><Trash2 size={16}/> Удалить заказ</button>}
+ </div>
+ {deleteConfirmId===o.id&&<div className="admin-order-delete-confirm" role="group" aria-label={'Подтверждение удаления заказа №'+o.id.slice(0,8)}>
+  <p>Удалить заказ №{o.id.slice(0,8).toUpperCase()}? Все позиции заказа тоже будут удалены. Восстановить данные нельзя.</p>
+  <div className="admin-order-delete-buttons">
+   <button type="button" className="admin-order-delete-cancel" disabled={!!deletingOrderId} onClick={()=>setDeleteConfirmId(null)}>Отмена</button>
+   <button type="button" className="admin-order-delete-approve" disabled={!!deletingOrderId} onClick={()=>deleteOrder(o.id)}>{deletingOrderId===o.id?'Удаляем…':'Да, удалить'}</button>
+  </div>
+ </div>}</div>)}</div>}
  </main>;
 }
 function emptyForm(){return {name:'',slug:'',category:'Стеллажи',price:'',description:'',image_url:'',gallery:[],dimensions:'',active:true,sort_order:100,specifications:{spriteIndex:-1}}}

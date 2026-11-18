@@ -200,3 +200,25 @@
  .ripiano-footer .ripiano-footer-contacts a{flex-direction:column;gap:2px}
 }
 
+
+
+/* Confirmation-only administrator order deletion */
+.admin-order-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:14px}
+.admin-order-actions select{margin-top:0;max-width:200px}
+.admin-order-delete-trigger{display:inline-flex;gap:7px;align-items:center;justify-content:center;border:1px solid #d8c3bf;color:#963d35;background:#fff;padding:10px 12px;min-height:43px;font-size:12px;transition:background .15s}
+.admin-order-delete-trigger:not(:disabled):hover{background:#fbefed}
+.admin-order-delete-trigger:disabled{opacity:.5;cursor:wait}
+.admin-order-delete-confirm{padding:15px 16px;margin-top:16px;border:1px solid #e4c9c4;background:#fff8f7}
+.admin-order-delete-confirm p{margin:0 0 12px;color:#73372f;font-size:12px;line-height:1.55}
+.admin-order-delete-buttons{display:flex;gap:9px;flex-wrap:wrap}
+.admin-order-delete-buttons button{min-height:41px;padding:9px 15px;border:1px solid #cbc3bc;font-size:12px}
+.admin-order-delete-cancel{background:#fff;color:#333}
+.admin-order-delete-approve{background:#9e382f;color:#fff;border-color:#9e382f!important}
+.admin-order-delete-buttons button:disabled{opacity:.55;cursor:wait}
+@media(max-width:680px){
+ .admin-order-actions{align-items:stretch;gap:10px}
+ .admin-order-actions select{flex:1 1 130px;max-width:none;margin-top:0}
+ .admin-order-delete-trigger{flex:1 1 auto;min-height:43px;font-size:11px}
+ .admin-order-delete-buttons{display:grid;grid-template-columns:1fr 1fr}
+ .admin-order-delete-buttons button{width:100%}
+}
