@@ -107,7 +107,7 @@ function App(){
     <div className="category-nav"><select aria-label="Категория" value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(x=><option key={x}>{x}</option>)}</select><span> / КОЛЛЕКЦИЯ</span></div>
     <div className="filter-right"><button onClick={()=>setSearch(!search)}><SlidersHorizontal size={14}/> ФИЛЬТР</button><select aria-label="Сортировка" value={sort} onChange={e=>setSort(e.target.value)}><option value="featured">ПО УМОЛЧАНИЮ</option><option value="price-asc">СНАЧАЛА ДЕШЕВЛЕ</option><option value="price-desc">СНАЧАЛА ДОРОЖЕ</option></select></div>
    </div>
-   {loading?<div className="empty-state">Загружаем каталог…</div>:<div className="products-grid mosaic-grid">{visible.filter(p=>route!=='/favorites'||favorites.includes(p.id)).map((p,i)=><article key={p.id} className={'product-tile mosaic-tile-'+(i%12)}>
+   {loading?<div className="empty-state">Загружаем каталог…</div>:<div className="products-grid mosaic-grid">{visible.filter(p=>route!=='/favorites'||favorites.includes(p.id)).map((p,i)=><article key={p.id} className={'product-tile mosaic-tile-'+(i%6)} style={{gridRow:i+1}}>
     <button className="product-image-btn" onClick={()=>toRoute('/product/'+p.slug)}><Photo product={p}/></button>
     <div className="product-meta"><button onClick={()=>toRoute('/product/'+p.slug)}>{p.name}</button><span>{money(p.price)}</span></div>
     <div className="tile-actions"><button aria-label="Добавить в избранное" onClick={()=>toggleFavorite(p.id)}><Heart size={16} fill={favorites.includes(p.id)?'currentColor':'none'}/></button><button aria-label="В корзину" onClick={()=>addCart(p.id)}><Plus size={18}/></button></div>
