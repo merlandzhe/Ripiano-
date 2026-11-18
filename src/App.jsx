@@ -157,8 +157,52 @@ function App(){
   </div>
   <span className="ripiano-footer-copyright">© RIPIANO 2026</span>
  </footer>
- {cartOpen&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setCartOpen(false)}}><aside className="cart-drawer"><header><h2>КОРЗИНА <span>({count})</span></h2><button onClick={()=>setCartOpen(false)} aria-label="Закрыть"><X/></button></header><div className="cart-lines">{entries.length?entries.map(({product:p,quantity})=><div className="cart-line" key={p.id}><Photo product={p}/><div className="cart-line-data"><b>{p.name}</b><span>{money(p.price)}</span><div className="quantity"><button onClick={()=>adjust(p.id,-1)}><Minus size={14}/></button>{quantity}<button onClick={()=>adjust(p.id,1)}><Plus size={14}/></button></div></div><button className="remove" title="Удалить" onClick={()=>adjust(p.id,-quantity)}><Trash2 size={17}/></button></div>):<div className="empty-cart">Корзина пока пуста.<br/>Добавьте мебель из каталога.</div>}</div>{entries.length>0&&<Checkout entries={entries} total={total} onDone={()=>{setCart({});setCartOpen(false)}}/>}</aside></div>}
+ {cartOpen&&<div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setCartOpen(false)}}><CartPanel entries={entries} count={count} total={total} adjust={adjust} onClose={()=>setCartOpen(false)} onDone={()=>{setCart({});setCartOpen(false)}}/></div>}
  </div>
+}
+function CartPanel({entries,count,total,adjust,onClose,onDone}){
+ const [step,setStep]=useState('items');
+ const scroller=useRef(null);
+ useEffect(()=>{
+  const previous=document.body.style.overflow;
+  document.body.style.overflow='hidden';
+  return ()=>{document.body.style.overflow=previous};
+ },[]);
+ useEffect(()=>{if(scroller.current)scroller.current.scrollTop=0},[step]);
+ return <aside className="cart-drawer cart-panel" role="dialog" aria-modal="true" aria-label={step==='items'?'Корзина':'Оформление заказа'}>
+  <header className="cart-panel-header">
+   <div className="cart-panel-title">
+    {step==='checkout'&&<button type="button" className="cart-back" onClick={()=>setStep('items')} aria-label="Назад к товарам"><ArrowLeft size={21}/></button>}
+    <h2>{step==='items'?'КОРЗИНА':'ОФОРМЛЕНИЕ'} <span>({count})</span></h2>
+   </div>
+   <button type="button" onClick={onClose} aria-label="Закрыть корзину"><X size={23}/></button>
+  </header>
+  {step==='items'?<>
+   <div className="cart-lines cart-panel-lines" ref={scroller}>
+    {entries.length?entries.map(({product:p,quantity})=><div className="cart-line" key={p.id}>
+     <Photo product={p}/>
+     <div className="cart-line-data">
+      <b>{p.name}</b>
+      <span>{money(p.price)}</span>
+      <div className="quantity">
+       <button type="button" aria-label={'Уменьшить количество '+p.name} onClick={()=>adjust(p.id,-1)}><Minus size={14}/></button>
+       <span>{quantity}</span>
+       <button type="button" aria-label={'Увеличить количество '+p.name} onClick={()=>adjust(p.id,1)}><Plus size={14}/></button>
+      </div>
+     </div>
+     <button type="button" className="remove" aria-label={'Удалить '+p.name+' из корзины'} title="Удалить" onClick={()=>adjust(p.id,-quantity)}><Trash2 size={18}/></button>
+    </div>):<div className="empty-cart">Корзина пока пуста.<br/>Добавьте мебель из каталога.</div>}
+   </div>
+   {entries.length>0&&<div className="cart-panel-summary">
+    <div className="checkout-total"><span>Итого</span><strong>{money(total)}</strong></div>
+    {entries.some(x=>x.product.price===null)&&<p className="quote-warning">Есть товары с ценой по запросу. Окончательную стоимость подтвердит менеджер.</p>}
+    <button className="btn-dark cart-panel-next" type="button" onClick={()=>setStep('checkout')}>Оформить заказ <ArrowRight size={18}/></button>
+    <small>Оплата не списывается. Менеджер свяжется с вами.</small>
+   </div>}
+  </>:<div className="cart-panel-checkout" ref={scroller}>
+   {entries.length>0?<Checkout entries={entries} total={total} onDone={onDone}/>:<div className="empty-cart">Корзина пуста. <button type="button" onClick={()=>setStep('items')}>Вернуться к товарам</button></div>}
+  </div>}
+ </aside>;
 }
 function Checkout({entries,total,onDone}){
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[note,setNote]=useState(''),[sending,setSending]=useState(false),[done,setDone]=useState(''),[error,setError]=useState('');
