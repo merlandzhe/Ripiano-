@@ -97,3 +97,31 @@
 @media(prefers-reduced-motion:reduce){
  .mosaic-grid .product-image-btn:hover img{transform:none}
 }
+
+
+/* RIPIANO admin: safe product ordering on mobile and desktop */
+.admin-tool-buttons{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.admin-tool-buttons .btn-outline{min-height:46px;padding:12px 15px;font-size:12px;gap:8px}
+.admin-tool-buttons .btn-dark{min-height:46px;padding:12px 17px;gap:8px}
+.admin-reorder-hint{margin:0 0 16px;padding:12px 14px;background:#f2eee8;color:#6b6055;font-size:12px;line-height:1.5}
+.admin-products-ordering .admin-product{transition:background-color .15s;touch-action:auto}
+.admin-product.admin-product-reorder{grid-template-columns:75px minmax(0,1fr) 110px 88px;gap:16px;cursor:grab;position:relative}
+.admin-product.admin-product-reorder:active{cursor:grabbing}
+.admin-product.admin-product-reorder.is-dragging{opacity:.4}
+.admin-product-reorder .admin-rank{position:absolute;top:15px;left:3px;z-index:1;font-size:10px;line-height:20px;text-align:center;width:20px;height:20px;border-radius:50%;background:#1d1d1d;color:#fff;pointer-events:none}
+.admin-reorder-controls{display:flex;justify-content:flex-end;align-items:center;gap:5px}
+.admin-reorder-controls button{width:37px;height:37px;border:1px solid #d1cec7;display:grid;place-items:center;background:#faf9f6;touch-action:manipulation}
+.admin-reorder-controls button:not(:disabled):hover{background:#e8e4dd}
+.admin-reorder-controls button:disabled{opacity:.25;cursor:default}
+.admin-product-reorder .admin-product-details{min-width:0}
+@media(max-width:680px){
+ .admin-tools{gap:12px;flex-wrap:wrap}
+ .admin-tool-buttons{width:100%;justify-content:space-between;gap:8px}
+ .admin-tool-buttons .btn-dark,.admin-tool-buttons .btn-outline{flex:1 1 auto;min-height:45px;padding:10px;font-size:11px;white-space:nowrap}
+ .admin-product.admin-product-reorder{grid-template-columns:54px minmax(0,1fr) 78px;gap:9px;padding:11px 0}
+ .admin-product-reorder>.photo{height:62px}
+ .admin-product-reorder>strong{display:none}
+ .admin-product-reorder .admin-rank{top:12px;left:0;width:18px;height:18px;line-height:18px;font-size:10px}
+ .admin-reorder-controls{gap:3px}
+ .admin-reorder-controls button{width:36px;height:38px}
+}

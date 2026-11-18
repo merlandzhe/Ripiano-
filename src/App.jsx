@@ -1,7 +1,7 @@
 
 import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
-import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid} from 'lucide-react';
+import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical} from 'lucide-react';
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
 const money=n=>n==null?'По запросу':new Intl.NumberFormat('ru-RU').format(Number(n))+' ₽';
@@ -133,9 +133,11 @@ function Checkout({entries,total,onDone}){
 function Admin({session,refresh}){
  const [authorized,setAuthorized]=useState(false),[checking,setChecking]=useState(true),[mode,setMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authMessage,setAuthMessage]=useState(''),[busy,setBusy]=useState(false);
  const [tab,setTab]=useState('products'),[products,setProducts]=useState([]),[orders,setOrders]=useState([]),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm()),[notice,setNotice]=useState('');
+ const [ordering,setOrdering]=useState(false),[orderIds,setOrderIds]=useState([]),[orderSaving,setOrderSaving]=useState(false),[draggingId,setDraggingId]=useState(null);
+ const arrangedProducts=ordering?orderIds.map(id=>products.find(p=>p.id===id)).filter(Boolean):products;
  useEffect(()=>{let cancelled=false;async function check(){setChecking(true);if(!session){setAuthorized(false);setChecking(false);return}const {data}=await supabase.from('ripiano_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();if(cancelled)return;setAuthorized(!!data);setChecking(false)}check();return()=>{cancelled=true}},[session?.user?.id]);
  useEffect(()=>{if(authorized){loadProducts();loadOrders()}},[authorized]);
- async function loadProducts(){const {data,error}=await supabase.from('ripiano_products').select('*').order('sort_order');if(!error)setProducts(data||[])}
+ async function loadProducts(){const {data,error}=await supabase.from('ripiano_products').select('*').order('sort_order').order('id');if(!error)setProducts(data||[]);return !error}
  async function loadOrders(){const {data,error}=await supabase.from('ripiano_orders').select('*,ripiano_order_items(*)').order('created_at',{ascending:false});if(!error)setOrders(data||[])}
  async function authenticate(e){e.preventDefault();setAuthMessage('');setBusy(true);const {error}=mode==='signup'?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});setBusy(false);setAuthMessage(error?error.message:(mode==='signup'?'Проверьте почту и подтвердите регистрацию. Доступ к панели будет предоставлен владельцем.':'Вход выполнен.'))}
  function startEdit(p){setEditing(p?.id||'new');setForm(p?{name:p.name,slug:p.slug,category:p.category,price:p.price??'',description:p.description||'',image_url:p.image_url||'',dimensions:p.specifications?.dimensions||'',active:p.active,sort_order:p.sort_order||100,specifications:p.specifications||{}}:emptyForm());setNotice('');window.scrollTo({top:0,behavior:'smooth'})}
@@ -143,6 +145,66 @@ function Admin({session,refresh}){
   const payload={name:form.name.trim(),slug:form.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-'),category:form.category,price:form.price===''?null:Number(form.price),description:form.description,image_url:form.image_url,active:form.active,sort_order:Number(form.sort_order)||100,specifications:{...form.specifications,dimensions:form.dimensions}};
   const req=editing==='new'?supabase.from('ripiano_products').insert(payload):supabase.from('ripiano_products').update(payload).eq('id',editing);
   const {error}=await req;setBusy(false);if(error){setNotice('Ошибка: '+error.message)}else{setEditing(null);setNotice('Товар сохранён');loadProducts();refresh()}}
+
+ function beginOrdering(){
+  setOrderIds(products.map(p=>p.id));
+  setOrdering(true);
+  setDraggingId(null);
+  setNotice('');
+ }
+ function cancelOrdering(){
+  setOrdering(false);
+  setOrderIds([]);
+  setDraggingId(null);
+ }
+ function shiftProduct(id,offset){
+  if(orderSaving)return;
+  setOrderIds(current=>{
+   const from=current.indexOf(id),to=from+offset;
+   if(from<0||to<0||to>=current.length)return current;
+   const next=[...current];
+   [next[from],next[to]]=[next[to],next[from]];
+   return next;
+  });
+ }
+ function dropProduct(sourceId,targetId){
+  if(orderSaving)return;
+  setOrderIds(current=>{
+   const from=current.indexOf(sourceId),to=current.indexOf(targetId);
+   if(from<0||to<0||from===to)return current;
+   const next=[...current];
+   next.splice(from,1);
+   next.splice(to,0,sourceId);
+   return next;
+  });
+ }
+ async function saveProductOrdering(){
+  if(orderSaving||!ordering)return;
+  if(orderIds.length!==products.length){
+   setNotice('Список товаров изменился. Отмените сортировку и откройте её заново.');
+   return;
+  }
+  if(orderIds.every((id,i)=>id===products[i].id)){
+   cancelOrdering();
+   setNotice('Порядок товаров не изменился.');
+   return;
+  }
+  setOrderSaving(true);
+  setNotice('');
+  try{
+   const {error}=await supabase.rpc('ripiano_set_product_order',{p_product_ids:orderIds});
+   if(error)throw error;
+   const [loaded]=await Promise.all([loadProducts(),refresh()]);
+   cancelOrdering();
+   setNotice(loaded?'Порядок товаров сохранён. Изменения отображаются в каталоге.':'Порядок сохранён. Обновите страницу, чтобы увидеть изменения.');
+  }catch(error){
+   console.error('Не удалось сохранить порядок товаров',error);
+   setNotice('Не удалось сохранить порядок: '+(error.message||'попробуйте снова'));
+  }finally{
+   setOrderSaving(false);
+  }
+ }
+
  async function uploadImage(e){const file=e.target.files?.[0];if(!file)return;if(!['image/png','image/webp','image/jpeg'].includes(file.type)||file.size>10*1024*1024){setNotice('Допустимы JPG, PNG, WebP до 10 МБ');return}setBusy(true);
  const path=crypto.randomUUID()+'-'+file.name.replace(/[^a-zA-Z0-9_.-]/g,'');
  const {error}=await supabase.storage.from('ripiano-products').upload(path,file,{cacheControl:'3600'});
@@ -155,7 +217,37 @@ function Admin({session,refresh}){
  if(!authorized)return <main className="admin-main admin-login"><span className="eyebrow">RIPIANO / УПРАВЛЕНИЕ</span><h1>Доступ не назначен</h1><p>Вы вошли как {session.user.email}. Для безопасного доступа к товарам и заказам владельца нужно отдельно добавить в список администраторов в Supabase.</p><button className="btn-outline" onClick={()=>supabase.auth.signOut()}>Выйти</button></main>;
  return <main className="admin-main"><div className="admin-heading"><div><span className="eyebrow">RIPIANO / ПАНЕЛЬ ВЛАДЕЛЬЦА</span><h1>Управление магазином</h1></div><button onClick={()=>supabase.auth.signOut()} className="btn-outline"><LogOut size={16}/> Выйти</button></div><div className="admin-tabs"><button className={tab==='products'?'active':''} onClick={()=>{setTab('products');setEditing(null)}}><Package size={17}/> Товары</button><button className={tab==='orders'?'active':''} onClick={()=>{setTab('orders');setEditing(null)}}><ClipboardList size={17}/> Заказы {orders.filter(o=>o.status==='new').length>0?'('+orders.filter(o=>o.status==='new').length+')':''}</button></div>
  {notice&&<p className="admin-notice">{notice}</p>}
- {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><label>Фото товара<input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label>{form.image_url&&<div className="uploaded-preview"><img src={form.image_url} alt="" onError={e=>e.currentTarget.style.display='none'}/><small>{form.image_url}</small></div>}<div className="editor-row"><label>Порядок<input type="number" value={form.sort_order} onChange={e=>setForm({...form,sort_order:e.target.value})}/></label><label className="checkbox"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Показывать в магазине</label></div><button type="submit" className="btn-dark" disabled={busy}>{busy?'Сохраняем…':'Сохранить товар'} <Check size={18}/></button></form>:<><div className="admin-tools"><p>{products.length} товаров в каталоге</p><button className="btn-dark" onClick={()=>startEdit()}><Plus size={17}/> Добавить товар</button></div><div className="admin-products">{products.map(p=><div className="admin-product" key={p.id}><Photo product={p}/><div className="admin-product-details"><b>{p.name}</b><span>{p.category} · {p.active?'На сайте':'Скрыт'}</span></div><strong>{money(p.price)}</strong><button onClick={()=>startEdit(p)}><Edit3 size={18}/></button></div>)}</div></>)}
+ {tab==='products'&&(editing?<form className="editor" onSubmit={saveProduct}><div className="editor-heading"><h2>{editing==='new'?'Новый товар':'Редактировать товар'}</h2><button type="button" onClick={()=>setEditing(null)}><X size={22}/></button></div><label>Название<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Адрес (slug)<input required value={form.slug} onChange={e=>setForm({...form,slug:e.target.value})}/></label><div className="editor-row"><label>Категория<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.slice(1).concat('Другое').map(c=><option key={c}>{c}</option>)}</select></label><label>Цена в ₽ (пусто — по запросу)<input type="number" min="0" step="1" value={form.price} onChange={e=>setForm({...form,price:e.target.value})}/></label></div><label>Описание<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><label>Размеры<input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})}/></label><label>Фото товара<input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadImage}/></label>{form.image_url&&<div className="uploaded-preview"><img src={form.image_url} alt="" onError={e=>e.currentTarget.style.display='none'}/><small>{form.image_url}</small></div>}<div className="editor-row"><label>Порядок<input type="number" value={form.sort_order} onChange={e=>setForm({...form,sort_order:e.target.value})}/></label><label className="checkbox"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Показывать в магазине</label></div><button type="submit" className="btn-dark" disabled={busy}>{busy?'Сохраняем…':'Сохранить товар'} <Check size={18}/></button></form>:<><div className="admin-tools">
+  <p>{products.length} товаров в каталоге</p>
+  <div className="admin-tool-buttons">
+   {ordering?<>
+    <button type="button" className="btn-outline" onClick={cancelOrdering} disabled={orderSaving}>Отмена</button>
+    <button type="button" className="btn-dark" onClick={saveProductOrdering} disabled={orderSaving}><Check size={17}/>{orderSaving?'Сохраняем…':'Сохранить порядок'}</button>
+   </>:<>
+    <button type="button" className="btn-outline" onClick={beginOrdering}><GripVertical size={17}/> Изменить порядок</button>
+    <button type="button" className="btn-dark" onClick={()=>startEdit()}><Plus size={17}/> Добавить товар</button>
+   </>}
+  </div>
+ </div>
+ {ordering&&<p className="admin-reorder-hint">Меняйте порядок кнопками ↑ ↓ или перетаскивайте карточки на компьютере. Нажмите «Сохранить порядок», чтобы обновить сайт. Скрытые товары тоже присутствуют в списке.</p>}
+ <div className={'admin-products'+(ordering?' admin-products-ordering':'')}>
+ {arrangedProducts.map((p,i)=><div className={'admin-product'+(ordering?' admin-product-reorder':'')+(draggingId===p.id?' is-dragging':'')} key={p.id}
+  draggable={ordering&&!orderSaving}
+  onDragStart={e=>{if(!ordering||orderSaving)return;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',p.id);setDraggingId(p.id)}}
+  onDragOver={e=>{if(ordering&&!orderSaving){e.preventDefault();e.dataTransfer.dropEffect='move'}}}
+  onDrop={e=>{if(!ordering||orderSaving)return;e.preventDefault();const id=e.dataTransfer.getData('text/plain')||draggingId;if(id)dropProduct(id,p.id);setDraggingId(null)}}
+  onDragEnd={()=>setDraggingId(null)}
+  >
+  <Photo product={p}/>
+  {ordering&&<span className="admin-rank">{i+1}</span>}
+  <div className="admin-product-details"><b>{p.name}</b><span>{p.category} · {p.active?'На сайте':'Скрыт'}</span></div>
+  <strong>{money(p.price)}</strong>
+  {ordering?<div className="admin-reorder-controls">
+   <button type="button" aria-label={'Поднять '+p.name+' выше'} title="Вверх" disabled={orderSaving||i===0} onClick={()=>shiftProduct(p.id,-1)}><ArrowUp size={17}/></button>
+   <button type="button" aria-label={'Опустить '+p.name+' ниже'} title="Вниз" disabled={orderSaving||i===arrangedProducts.length-1} onClick={()=>shiftProduct(p.id,1)}><ArrowDown size={17}/></button>
+  </div>:<button type="button" className="admin-edit-product" aria-label={'Редактировать '+p.name} onClick={()=>startEdit(p)}><Edit3 size={18}/></button>}
+ </div>)}
+ </div></>)}
  {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><select value={o.status} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select></div>)}</div>}
  </main>;
 }
