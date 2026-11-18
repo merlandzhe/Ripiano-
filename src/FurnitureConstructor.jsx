@@ -4,6 +4,7 @@ import {ArrowLeft,ArrowRight,Check,RotateCcw,Ruler} from 'lucide-react';
 import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 import './furniture-constructor.css';
+import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 
 const TYPES=[
  {id:'wardrobe',name:'Шкаф',title:'СВОЙ ШКАФ',label:'Шкаф на заказ'},
@@ -131,6 +132,7 @@ function CustomFurniture({kind,supabase}){
  const [config,setConfig]=useState(()=>initialConfig(kind));
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[note,setNote]=useState('');
  const [website,setWebsite]=useState('');
+ const [consent,setConsent]=useState(false);
  const [sending,setSending]=useState(false),[submitted,setSubmitted]=useState(false),[error,setError]=useState('');
  const meta=TYPES.find(x=>x.id===kind);
  const limits=SPEC[kind].limits;
@@ -143,10 +145,11 @@ function CustomFurniture({kind,supabase}){
   if(sending||submitted)return;
   if(website){setSubmitted(true);return;}
   if(name.trim().length<2||phone.trim().length<7){setError('Укажите имя и телефон.');return}
+  if(!consent){setError('Подтвердите согласие на обработку персональных данных.');return;}
   setSending(true);setError('');
   try{
    const {error:submitError}=await supabase.from('ripiano_custom_orders').insert({
-    customer_name:name.trim(),phone:phone.trim(),note:note.trim(),configuration:config
+    customer_name:name.trim(),phone:phone.trim(),note:note.trim(),configuration:config,consent_version:CONSENT_VERSION
    });
    if(submitError)throw submitError;
    setSubmitted(true);
@@ -208,9 +211,10 @@ function CustomFurniture({kind,supabase}){
       <label>Телефон<input required type="tel" inputMode="tel" minLength={7} maxLength={35} placeholder="+7 999 000-00-00" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
       <label>Пожелания<textarea rows={3} maxLength={1500} placeholder="Особенности помещения, доставка, пожелания…" value={note} onChange={e=>setNote(e.target.value)}/></label>
       <label className="wc-honeypot" aria-hidden="true">Сайт<input tabIndex={-1} value={website} onChange={e=>setWebsite(e.target.value)} autoComplete="off"/></label>
+      <PrivacyConsent checked={consent} onChange={setConsent} disabled={sending} scope="моего проекта"/>
       {error&&<p className="wc-error" role="alert">{error}</p>}
       <button type="submit" className="wc-primary" disabled={sending}>{sending?'Отправляем…':'Отправить проект на расчёт'} <ArrowRight size={18}/></button>
-      <small>Контактные данные используются только для ответа по заявке. Расчёт предварительный до согласования с мастером.</small>
+      <small>Расчёт предварительный до согласования с мастером. Оплата не списывается.</small>
     </form>}
    </div>
   </section>

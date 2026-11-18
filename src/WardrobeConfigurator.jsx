@@ -2,6 +2,7 @@
 import React,{useState} from 'react';
 import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
 import './wardrobe-configurator.css';
+import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 
 const COLOR_OPTIONS=[
@@ -123,6 +124,7 @@ export default function WardrobeConfigurator({supabase}){
  const [phone,setPhone]=useState('');
  const [note,setNote]=useState('');
  const [website,setWebsite]=useState('');
+ const [consent,setConsent]=useState(false);
  const [sending,setSending]=useState(false);
  const [submitted,setSubmitted]=useState(false);
  const [error,setError]=useState('');
@@ -139,13 +141,15 @@ export default function WardrobeConfigurator({supabase}){
   if(sending||submitted)return;
   if(website){setSubmitted(true);return;}
   if(name.trim().length<2||phone.trim().length<7){setError('Укажите имя и номер телефона.');return;}
+  if(!consent){setError('Подтвердите согласие на обработку персональных данных.');return;}
   setSending(true);setError('');
   try{
    const {error:err}=await supabase.from('ripiano_custom_orders').insert({
     customer_name:name.trim(),
     phone:phone.trim(),
     note:note.trim(),
-    configuration:config
+    configuration:config,
+    consent_version:CONSENT_VERSION
    });
    if(err)throw err;
    setSubmitted(true);
@@ -198,9 +202,10 @@ export default function WardrobeConfigurator({supabase}){
       <label>Телефон для связи<input type="tel" required inputMode="tel" minLength={7} maxLength={35} placeholder="+7 999 000-00-00" value={phone} onChange={e=>setPhone(e.target.value)}/></label>
       <label>Пожелания по проекту<textarea rows={3} maxLength={1500} placeholder="Например, для спальни, нужна доставка…" value={note} onChange={e=>setNote(e.target.value)}/></label>
       <label className="wc-honeypot" aria-hidden="true">Ваш сайт<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>
+      <PrivacyConsent checked={consent} onChange={setConsent} disabled={sending} scope="моего проекта"/>
       {error&&<p className="wc-error" role="alert">{error}</p>}
       <button className="wc-primary" disabled={sending} type="submit">{sending?'Отправляем…':'Отправить проект на расчёт'} <ArrowRight size={19}/></button>
-      <small>Отправляя заявку, вы соглашаетесь на использование контактных данных только для связи по вашему проекту. Оплата на сайте не списывается.</small>
+      <small>Оплата на сайте не списывается. Менеджер свяжется с вами для расчёта.</small>
     </form>}
    </div>
   </section>

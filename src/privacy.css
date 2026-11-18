@@ -1,0 +1,33 @@
+
+/* RIPIANO consent controls and legal content */
+.rp-consent{margin:9px 0 1px;padding:0}
+.rp-consent-label{display:flex!important;flex-direction:row!important;gap:11px!important;align-items:flex-start!important;color:#66615c!important;font-size:11px!important;line-height:1.55!important;cursor:pointer}
+.rp-consent-label input[type="checkbox"]{flex:0 0 auto!important;display:block!important;width:18px!important;height:18px!important;min-height:18px!important;margin:2px 0 0!important;padding:0!important;accent-color:#242321;cursor:pointer}
+.rp-consent-label>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.rp-consent-label a{text-decoration:underline;text-underline-offset:2px;color:#302e2a}
+.rp-consent-label a:hover{color:#8a6950}
+.rp-consent-label a:focus-visible,.rp-consent-label input:focus-visible{outline:2px solid #85745f;outline-offset:3px}
+.rp-legal{width:min(1060px,calc(100% - 76px));margin:0 auto;padding:46px 0 100px}
+.rp-legal-breadcrumb{display:flex;align-items:center;gap:9px;font-size:11px;color:#848078}
+.rp-legal-breadcrumb button{color:inherit}
+.rp-legal-heading{padding:80px 0 43px;border-bottom:1px solid #dcd7d0}
+.rp-legal-heading>span{color:#887f74;font-size:11px;letter-spacing:.11em}
+.rp-legal-heading h1{font-size:clamp(33px,5.6vw,69px);line-height:1.02;letter-spacing:-.05em;margin:17px 0 19px;max-width:100%;overflow-wrap:break-word}
+.rp-legal-heading p{color:#818078;font-size:12px}
+.rp-legal-attention{background:#f5f0e6;padding:19px 23px;font-size:12px;color:#64563e;line-height:1.7;margin:25px 0 45px}
+.rp-legal-body{max-width:730px}
+.rp-legal-body section{margin:0 0 36px}
+.rp-legal-body h2{font-size:20px;line-height:1.35;font-weight:650;margin:0 0 12px}
+.rp-legal-body p{font-size:14px;line-height:1.85;color:#5f5c57;margin:0 0 12px}
+.rp-legal-body a{color:#34302b;text-decoration:underline}
+.rp-legal-other{border-top:1px solid #dcd7d0;padding-top:25px;margin-top:42px}
+.rp-legal-other button{font-size:13px;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:680px){
+ .rp-legal{width:calc(100% - 32px);padding:24px 0 55px}
+ .rp-legal-heading{padding:49px 0 28px}
+ .rp-legal-heading h1{font-size:33px}
+ .rp-legal-attention{padding:14px 15px;font-size:11px;margin:18px 0 32px}
+ .rp-legal-body h2{font-size:17px}
+ .rp-legal-body p{font-size:12px;line-height:1.7}
+ .rp-consent-label{font-size:11px!important;line-height:1.55!important}
+}

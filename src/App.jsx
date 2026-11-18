@@ -3,6 +3,7 @@ import React, {useEffect,useMemo,useRef,useState} from 'react';
 import {createClient} from '@supabase/supabase-js';
 import FurnitureConstructor,{FurniturePreview,FurnitureDetails} from './FurnitureConstructor.jsx';
 import {PortfolioPage,PortfolioAdmin} from './Portfolio.jsx';
+import {PrivacyConsent,PrivacyPage,CONSENT_VERSION} from './Privacy.jsx';
 import {Search, Heart, ShoppingBag, Menu, X, ArrowLeft, ArrowRight, SlidersHorizontal, ChevronDown, Plus, Minus, Trash2, Edit3, LogOut, Package, ClipboardList, Upload, Sparkles, Check, Mail, UserRound, LayoutGrid, ArrowUp, ArrowDown, GripVertical, MapPin, MessageCircle, Instagram, Layers, Images} from 'lucide-react';
 
 const supabase=createClient('https://wydiooorgnigobqscnmz.supabase.co','sb_publishable_bSNTmCCrrKMU2Em_02WszQ_DB-tXTHj',{auth:{persistSession:true,autoRefreshToken:true}});
@@ -143,6 +144,8 @@ function App(){
  :route==='/admin'?<Admin session={session} refresh={fetchProducts}/>
  :route==='/constructor'?<FurnitureConstructor supabase={supabase}/>
  :route==='/works'?<PortfolioPage supabase={supabase} onNavigate={toRoute}/>
+ :route==='/privacy-policy'?<PrivacyPage type="policy" onNavigate={toRoute}/>
+ :route==='/personal-data-consent'?<PrivacyPage type="consent" onNavigate={toRoute}/>
  :route==='/about'?<main className="about-main ripiano-about">
   <span className="eyebrow">RIPIANO / О НАС</span>
   <h1>Мебель для вашего пространства.</h1>
@@ -170,6 +173,8 @@ function App(){
    <button onClick={()=>toRoute('/works')}>Наши работы</button>
    <button onClick={()=>toRoute('/constructor')}>На заказ</button>
    <button onClick={()=>toRoute('/admin')}>Владельцу</button>
+   <button onClick={()=>toRoute('/privacy-policy')}>Политика обработки данных</button>
+   <button onClick={()=>toRoute('/personal-data-consent')}>Согласие на обработку данных</button>
   </nav>
   <div className="ripiano-footer-contacts">
    <b>Контакты</b>
@@ -227,11 +232,24 @@ function CartPanel({entries,count,total,adjust,onClose,onDone}){
  </aside>;
 }
 function Checkout({entries,total,onDone}){
- const [name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[note,setNote]=useState(''),[sending,setSending]=useState(false),[done,setDone]=useState(''),[error,setError]=useState('');
- async function submit(e){e.preventDefault();setSending(true);setError('');
-  const {data,error:err}=await supabase.rpc('ripiano_place_order',{p_name:name,p_phone:phone,p_address:address,p_note:note,p_items:entries.map(x=>({product_id:x.product.id,quantity:x.quantity}))});
-  setSending(false);if(err){setError('Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.');console.error(err)}else{setDone(data)}}
- return <div className="checkout"><div className="checkout-total"><span>Итого</span><strong>{money(total)}</strong></div>{entries.some(x=>x.product.price===null)&&<p className="quote-warning">Часть товаров — по запросу. Финальную сумму подтвердит менеджер.</p>}{done?<div className="checkout-success"><Check size={28}/><b>Заявка отправлена</b><span>Мы свяжемся с вами для подтверждения.</span><button className="btn-dark" onClick={onDone}>Готово</button></div>:<form onSubmit={submit}><h3>Оформить заказ</h3><input required maxLength={120} minLength={2} placeholder="Ваше имя" value={name} onChange={e=>setName(e.target.value)}/><input required type="tel" minLength={7} maxLength={35} placeholder="Телефон" value={phone} onChange={e=>setPhone(e.target.value)}/><input maxLength={400} placeholder="Город / адрес (по желанию)" value={address} onChange={e=>setAddress(e.target.value)}/><textarea maxLength={1500} placeholder="Комментарий к заказу" rows={2} value={note} onChange={e=>setNote(e.target.value)}/>{error&&<p className="error">{error}</p>}<button className="btn-dark" disabled={sending}>{sending?'Отправляем…':'Отправить заявку'} <ArrowRight size={17}/></button><small>Оплата не списывается. Заказ подтвердит менеджер.</small></form>}</div>;
+ const [name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[note,setNote]=useState(''),[consent,setConsent]=useState(false),[sending,setSending]=useState(false),[done,setDone]=useState(''),[error,setError]=useState('');
+ async function submit(e){
+  e.preventDefault();
+  if(sending)return;
+  if(!consent){setError('Подтвердите согласие на обработку персональных данных.');return;}
+  setSending(true);setError('');
+  try{
+   const {data,error:err}=await supabase.rpc('ripiano_place_order_with_consent',{
+    p_name:name,p_phone:phone,p_address:address,p_note:note,
+    p_items:entries.map(x=>({product_id:x.product.id,quantity:x.quantity})),
+    p_consent_version:CONSENT_VERSION
+   });
+   if(err)throw err;
+   setDone(data);
+  }catch(err){setError('Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.');console.error(err)}
+  finally{setSending(false)}
+ }
+ return <div className="checkout"><div className="checkout-total"><span>Итого</span><strong>{money(total)}</strong></div>{entries.some(x=>x.product.price===null)&&<p className="quote-warning">Часть товаров — по запросу. Финальную сумму подтвердит менеджер.</p>}{done?<div className="checkout-success"><Check size={28}/><b>Заявка отправлена</b><span>Мы свяжемся с вами для подтверждения.</span><button className="btn-dark" onClick={onDone}>Готово</button></div>:<form onSubmit={submit}><h3>Оформить заказ</h3><input required maxLength={120} minLength={2} placeholder="Ваше имя" value={name} onChange={e=>setName(e.target.value)}/><input required type="tel" minLength={7} maxLength={35} placeholder="Телефон" value={phone} onChange={e=>setPhone(e.target.value)}/><input maxLength={400} placeholder="Город / адрес (по желанию)" value={address} onChange={e=>setAddress(e.target.value)}/><textarea maxLength={1500} placeholder="Комментарий к заказу" rows={2} value={note} onChange={e=>setNote(e.target.value)}/><PrivacyConsent checked={consent} onChange={setConsent} disabled={sending} scope="моего заказа"/>{error&&<p className="error">{error}</p>}<button className="btn-dark" disabled={sending}>{sending?'Отправляем…':'Отправить заявку'} <ArrowRight size={17}/></button><small>Оплата не списывается. Заказ подтвердит менеджер.</small></form>}</div>;
 }
 
 function CustomProjects({projects,onStatus,onDelete,error}){
@@ -258,7 +276,7 @@ function CustomProjects({projects,onStatus,onDelete,error}){
   :projects.map(item=><article className="admin-order wc-admin-item" key={item.id}>
     <div className="order-top"><b>{({wardrobe:'Шкаф',dresser:'Комод',shelf:'Стеллаж',desk:'Стол'})[item.configuration?.kind]||'Шкаф'} · проект №{item.id.slice(0,8).toUpperCase()}</b><span>{new Date(item.created_at).toLocaleString('ru-RU')}</span></div>
     <div className="wc-admin-customer"><b>{item.customer_name}</b><a href={'tel:'+item.phone}>{item.phone}</a></div>
-    {item.note&&<p>Пожелания: {item.note}</p>}
+    {item.note&&<p>Пожелания: {item.note}</p>}{item.consent_at&&<p className="rp-admin-consent-status">Согласие на обработку данных: {new Date(item.consent_at).toLocaleString('ru-RU')} · {item.consent_version}</p>}
     <div className="wc-admin-project-body"><FurniturePreview config={item.configuration}/><FurnitureDetails config={item.configuration}/></div>
     <div className="wc-admin-project-bottom"><b>Стоимость: по запросу</b>
       <label>Статус <select value={item.status} disabled={pending===item.id||!!deletingId} onChange={e=>update(item.id,e.target.value)}>
@@ -533,7 +551,7 @@ function Admin({session,refresh}){
  </div></>)}
  {tab==='projects'&&<CustomProjects projects={projects} error={projectsError} onStatus={changeProjectStatus} onDelete={deleteCustomProject}/>}
  {tab==='portfolio'&&<PortfolioAdmin supabase={supabase}/>}
- {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><div className="admin-order-actions">
+ {tab==='orders'&&<div className="admin-orders">{orders.length===0?<div className="empty-state">Заказов пока нет.</div>:orders.map(o=><div className="admin-order" key={o.id}><div className="order-top"><b>Заказ №{o.id.slice(0,8).toUpperCase()}</b><span>{new Date(o.created_at).toLocaleString('ru-RU')}</span></div><div className="order-info"><span>{o.customer_name} · <a href={'tel:'+o.phone}>{o.phone}</a></span><strong>{money(o.total)}</strong></div>{o.address&&<p>{o.address}</p>}{o.note&&<p>{o.note}</p>}{o.consent_at&&<p className="rp-admin-consent-status">Согласие на обработку данных: {new Date(o.consent_at).toLocaleString('ru-RU')} · {o.consent_version}</p>}<ul>{(o.ripiano_order_items||[]).map(it=><li key={it.id}>{it.product_name} × {it.quantity} — {money(it.unit_price)}</li>)}</ul><div className="admin-order-actions">
  <select aria-label={'Статус заказа №'+o.id.slice(0,8)} value={o.status} disabled={!!deletingOrderId} onChange={e=>setOrder(o.id,e.target.value)}><option value="new">Новый</option><option value="confirmed">Подтверждён</option><option value="completed">Выполнен</option><option value="cancelled">Отменён</option></select>
  {deleteConfirmId!==o.id&&<button type="button" className="admin-order-delete-trigger" disabled={!!deletingOrderId} onClick={()=>{setDeleteConfirmId(o.id);setNotice('')}}><Trash2 size={16}/> Удалить заказ</button>}
  </div>
