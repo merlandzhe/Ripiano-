@@ -44,7 +44,7 @@ export function WardrobePreview({config,doors=false}){
  const hCm=clamp(config?.height_cm??220,180,260);
  const dCm=clamp(config?.depth_cm??55,40,70);
  const sections=Array.isArray(config?.sections)&&config.sections.length?config.sections:INITIAL_SECTIONS;
- const n=Math.min(4,Math.max(2,sections.length));
+ const n=Math.min(6,Math.max(2,sections.length));
  const scale=Math.min(352/wCm,290/hCm);
  const w=wCm*scale,h=hCm*scale,x=(438-w)/2,y=27+(293-h)/2;
  const side=7,sectionW=(w-2*side)/n;
@@ -131,7 +131,7 @@ export default function WardrobeConfigurator({supabase}){
  const [error,setError]=useState('');
  const edit=(key,value)=>setConfig(c=>({...c,[key]:value}));
  const sectionCount=count=>{
-  const n=clamp(count,2,4);
+  const n=clamp(count,2,6);
   setConfig(c=>({...c,sections:Array.from({length:n},(_,i)=>c.sections[i]||{kind:'shelves',shelves:4,drawers:3})}));
   setActive(a=>Math.min(a,n-1));
  };
@@ -181,7 +181,7 @@ export default function WardrobeConfigurator({supabase}){
      <p className="wc-hint">Размеры в сантиметрах. Ограничения предварительные — окончательно подтвердим после замера.</p>
     </section>
     <section className="wc-control-card"><div className="wc-section-title"><span>02</span><h2>Наполнение</h2></div>
-     <label className="wc-select-label">Количество секций<select value={config.sections.length} onChange={e=>sectionCount(e.target.value)}><option value="2">2 секции</option><option value="3">3 секции</option><option value="4">4 секции</option></select></label>
+     <label className="wc-select-label">Количество секций<select value={config.sections.length} onChange={e=>sectionCount(e.target.value)}><option value="2">2 секции</option><option value="3">3 секции</option><option value="4">4 секции</option><option value="5">5 секций</option><option value="6">6 секций</option></select></label>
      <div className="wc-section-tabs" role="group" aria-label="Выберите секцию">{config.sections.map((s,i)=><button type="button" key={i} aria-pressed={active===i} className={active===i?'active':''} onClick={()=>{setActive(i);setDoors(false)}}>Секция {i+1}</button>)}</div>
      <div className="wc-fills">{FILL_OPTIONS.map(t=><button type="button" key={t.id} className={section.kind===t.id?'active':''} aria-pressed={section.kind===t.id} onClick={()=>{editSection('kind',t.id);setDoors(false)}}>{t.name}</button>)}</div>
      {section.kind==='shelves'&&<label className="wc-select-label">Количество полок<select value={section.shelves} onChange={e=>editSection('shelves',Number(e.target.value))}>{[2,3,4,5,6].map(n=><option key={n} value={n}>{n}</option>)}</select></label>}

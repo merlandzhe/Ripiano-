@@ -37,7 +37,7 @@ function buildModel(group,configuration,showDoors){
   piece(w,t,d,0,h-t/2,0);
   piece(w,h,.008,0,h/2,-d/2+.004,inner);
   const sections=Array.isArray(cfg.sections)&&cfg.sections.length?cfg.sections:[{kind:'shelves'},{kind:'rail'}];
-  const count=Math.min(4,Math.max(2,sections.length));
+  const count=Math.min(6,Math.max(2,sections.length));
   const sw=(w-t*2)/count;
   for(let s=0;s<count;s++){
    const sec=sections[s]||{kind:'shelves'};
