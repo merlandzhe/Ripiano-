@@ -129,3 +129,14 @@
  .fc-facade-choice{min-height:94px;font-size:11px}
  .fc-facade-mini{width:42px;height:42px}
 }
+
+
+.fc-facade-mini-mixed{
+ background:linear-gradient(90deg,transparent 0 49%,#cbbfb0 49% 53%,transparent 53%),
+ repeating-linear-gradient(90deg,#f6f3ed 0 4px,#b6ac9e 4px 5px,#f6f3ed 6px 10px);
+}
+.fc-facade-mini-mixed::after{content:"";position:absolute;inset:3px 3px 3px 55%;background:
+ repeating-linear-gradient(45deg,transparent 0 6px,#ad9f8f 6px 7px,transparent 7px 12px),
+ repeating-linear-gradient(-45deg,#f6f3ed 0 6px,#ad9f8f 6px 7px,#f6f3ed 7px 12px)}
+.fc-facade-mini-glass_frame{background:linear-gradient(90deg,#f6f3ed 0 30%,#cbbfb0 30% 33%,#9cb6ba 33% 70%,#cbbfb0 70% 73%,#f6f3ed 73%)}
+.fc-facade-mini-glass_frame::after{content:"";position:absolute;inset:2px 30% 2px 31%;border:1px solid #cbbfb0;background:linear-gradient(120deg,transparent 45%,#ffffff6b 47%,transparent 50%)}
