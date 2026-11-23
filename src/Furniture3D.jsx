@@ -2,11 +2,31 @@
 import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import './furniture-3d.css';
 
 const FINISH={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'};
 const bound=(v,min,max,fallback)=>Number.isFinite(Number(v))?Math.max(min,Math.min(max,Number(v))):fallback;
 const meter=n=>n/100;
+
+function woodGrain(hex){
+ const canvas=document.createElement('canvas');
+ canvas.width=256;canvas.height=512;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle=hex;ctx.fillRect(0,0,256,512);
+ let seed=217;
+ const random=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+ for(let i=0;i<360;i++){
+  const x=random()*256,shift=(random()-.5)*24,alpha=.018+random()*.085;
+  ctx.strokeStyle=random()>.5?'rgba(60,35,15,'+alpha+')':'rgba(255,246,226,'+alpha+')';
+  ctx.lineWidth=.35+random()*2.6;
+  ctx.beginPath();ctx.moveTo(x,0);
+  ctx.bezierCurveTo(x+shift,140,x-shift,330,x+shift*.3,512);
+  ctx.stroke();
+ }
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ return tex;
+}
 
 function buildModel(group,configuration,showDoors){
  const cfg=configuration||{};
@@ -15,9 +35,18 @@ function buildModel(group,configuration,showDoors){
  const h=meter(bound(cfg.height_cm,50,260,220));
  const d=meter(bound(cfg.depth_cm,20,100,55));
  const t=Math.min(.018,d*.065);
- const body=new THREE.MeshStandardMaterial({color:FINISH[cfg.body_color]||FINISH.oak,roughness:.77});
- const facade=new THREE.MeshStandardMaterial({color:FINISH[cfg.facade_color]||FINISH.white,roughness:.72});
- const inner=new THREE.MeshStandardMaterial({color:'#e8dfd2',roughness:.84});
+ const textures=[];
+ const finish=id=>{
+  const color=FINISH[id]||FINISH.oak;
+  if(id==='oak'||id==='sand'){
+   const tex=woodGrain(color);textures.push(tex);
+   return new THREE.MeshStandardMaterial({color:'#ffffff',map:tex,roughness:.75});
+  }
+  return new THREE.MeshStandardMaterial({color,roughness:.68});
+ };
+ const body=finish(cfg.body_color||'oak');
+ const facade=finish(cfg.facade_color||'white');
+ const inner=new THREE.MeshStandardMaterial({color:'#ded7cb',roughness:.85});
  const metal=new THREE.MeshStandardMaterial({color:cfg.handles==='silver'?'#a5a6a4':'#393838',roughness:.36,metalness:.52});
  const rail=new THREE.MeshStandardMaterial({color:'#aaa7a2',roughness:.39,metalness:.54});
  const materials=[body,facade,inner,metal,rail];
@@ -133,7 +162,7 @@ function buildModel(group,configuration,showDoors){
    }
   }
  }
- return {materials,w,h,d};
+ return {materials,textures,w,h,d};
 }
 function disposeGroup(group){
  const old=[...group.children];
@@ -160,22 +189,22 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
   try{
    renderer=new THREE.WebGLRenderer({canvas:holder,alpha:true,antialias:true,powerPreference:'low-power'});
    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
-   renderer.setClearColor('#eeebe5',1);
+   renderer.setClearColor('#ebe8e1',1);
    renderer.shadowMap.enabled=true;
    renderer.shadowMap.type=THREE.PCFShadowMap;
    renderer.outputColorSpace=THREE.SRGBColorSpace;
    scene=new THREE.Scene();
    camera=new THREE.PerspectiveCamera(37,1,.05,90);
    scene.add(group);
-   scene.add(new THREE.HemisphereLight('#ffffff','#b1a394',2.1));
-   const light=new THREE.DirectionalLight('#ffffff',2.8);
+   scene.add(new THREE.HemisphereLight('#ffffff','#a7a09a',1.5));
+   const light=new THREE.DirectionalLight('#ffffff',3.0);
    light.position.set(3.2,6,4.1);
    light.castShadow=true;
-   light.shadow.mapSize.set(1024,1024);
+   light.shadow.mapSize.set(2048,2048);
    light.shadow.camera.left=-5;light.shadow.camera.right=5;
    light.shadow.camera.top=6;light.shadow.camera.bottom=-6;
    scene.add(light);
-   const ground=new THREE.Mesh(new THREE.PlaneGeometry(24,24),new THREE.ShadowMaterial({opacity:.13}));
+   const ground=new THREE.Mesh(new THREE.PlaneGeometry(24,24),new THREE.ShadowMaterial({opacity:.20}));
    ground.rotation.x=-Math.PI/2;
    ground.position.y=-.015;
    ground.receiveShadow=true;
@@ -202,7 +231,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
    observer.observe(holder);
    const handleLoss=e=>{e.preventDefault();fallback.current?.()};
    holder.addEventListener('webglcontextlost',handleLoss,false);
-   session.current={group,renderer,camera,controls,schedule,materials:[],lastFit:null,fit:null};
+   session.current={group,renderer,camera,controls,schedule,materials:[],textures:[],lastFit:null,fit:null};
    const fit=(w,h,d)=>{
     const radius=Math.max(w,h,d);
     const factor=Math.max(radius/(2*Math.tan(37*Math.PI/360))*1.28,1.8);
@@ -227,6 +256,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
     ground.geometry.dispose();ground.material.dispose();
     const previous=last?.materials||[];
     for(const m of previous)m.dispose();
+    for(const texture of last?.textures||[])texture.dispose();
     renderer.dispose();
    };
   }catch(e){
@@ -241,8 +271,10 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
   if(!live)return;
   disposeGroup(live.group);
   for(const m of live.materials)m.dispose();
+  for(const texture of live.textures||[])texture.dispose();
   const result=buildModel(live.group,config,showDoors);
   live.materials=result.materials;
+  live.textures=result.textures;
   const fitKey=[config?.kind||'wardrobe',result.w,result.h,result.d].join('|');
   if(live.lastFit!==fitKey){live.lastFit=fitKey;live.fit?.(result.w,result.h,result.d);}
   live.schedule();
