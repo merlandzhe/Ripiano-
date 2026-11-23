@@ -3,11 +3,13 @@ import React,{useEffect,useState} from 'react';
 import {ArrowLeft,ArrowRight,Check,RotateCcw,Ruler} from 'lucide-react';
 import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
+import KitchenDrawing from './KitchenDrawing.jsx';
 import './furniture-constructor.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 
 const TYPES=[
+ {id:'kitchen',name:'Кухня',title:'СВОЮ КУХНЮ',label:'Прямая кухня на заказ'},
  {id:'wardrobe',name:'Шкаф',title:'СВОЙ ШКАФ',label:'Шкаф на заказ'},
  {id:'dresser',name:'Комод',title:'СВОЙ КОМОД',label:'Комод на заказ'},
  {id:'shelf',name:'Стеллаж',title:'СВОЙ СТЕЛЛАЖ',label:'Стеллаж на заказ'},
@@ -21,6 +23,7 @@ const COLORS=[
 ];
 const HANDLE_OPTIONS=[{id:'black',name:'Чёрные'},{id:'silver',name:'Серебристые'},{id:'hidden',name:'Без ручек'}];
 const SPEC={
+ kitchen:{limits:{width_cm:[180,450],height_cm:[215,280],depth_cm:[50,70]},defaults:{width_cm:300,height_cm:240,depth_cm:60,module_count:4,upper_count:4,upper_cabinets:true,countertop:'stone',backsplash:'tile',sink_position:'left',hob_position:'right'}},
  dresser:{limits:{width_cm:[40,180],height_cm:[50,140],depth_cm:[30,65]},defaults:{width_cm:90,height_cm:85,depth_cm:45,drawer_count:4,leg_style:'plinth'}},
  shelf:{limits:{width_cm:[40,240],height_cm:[80,260],depth_cm:[20,60]},defaults:{width_cm:110,height_cm:190,depth_cm:35,bay_count:2,shelf_count:4,back_panel:true}},
  desk:{limits:{width_cm:[80,240],height_cm:[70,85],depth_cm:[45,100]},defaults:{width_cm:140,height_cm:75,depth_cm:60,drawer_count:3,drawer_side:'right',leg_style:'panel'}}
@@ -29,7 +32,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,Math.round(Number(v)||a)));
 const material=id=>COLORS.find(c=>c.id===id)?.hex||COLORS[0].hex;
 const nameFor=id=>TYPES.find(t=>t.id===id)?.name||'Шкаф';
 const labelFor=(list,id)=>list.find(t=>t.id===id)?.name||'—';
-const initialConfig=kind=>({version:2,kind,...SPEC[kind].defaults,body_color:'oak',facade_color:'white',handles:'black'});
+const initialConfig=kind=>({version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',facade_color:'white',handles:'black'});
 
 function DimensionField({label,value,min,max,onChange}){
  const [draft,setDraft]=useState(String(value));
@@ -57,6 +60,7 @@ const numberOptions=(from,to,unit)=>Array.from({length:to-from+1},(_,i)=>({value
 function FurnitureDrawing({config}){
  const kind=config?.kind||'wardrobe';
  if(kind==='wardrobe')return <WardrobePreview config={config}/>;
+ if(kind==='kitchen')return <KitchenDrawing config={config}/>;
  const c=SPEC[kind]?config:initialConfig('dresser');
  const body=material(c.body_color),face=material(c.facade_color);
  const wi=clamp(c.width_cm,40,240),hi=clamp(c.height_cm,50,260),dep=clamp(c.depth_cm,20,100);
@@ -124,7 +128,8 @@ export function FurnitureDetails({config}){
  ...(c.kind==='shelf'?[]:[['Ручки',labelFor(HANDLE_OPTIONS,c.handles)]]),
  ...(c.kind==='dresser'?[['Количество ящиков',String(c.drawer_count)],['Основание',c.leg_style==='legs'?'На ножках':'Цоколь']]:[]),
  ...(c.kind==='shelf'?[['Количество секций',String(c.bay_count)],['Полки',String(c.shelf_count)],['Задняя стенка',c.back_panel?'Есть':'Открытый стеллаж']]:[]),
- ...(c.kind==='desk'?[['Основание',c.leg_style==='metal'?'Металлические опоры':'Боковины ЛДСП'],['Ящики',String(c.drawer_count)],['Расположение ящиков',c.drawer_count===0?'Без ящиков':({left:'Слева',right:'Справа',none:'Без тумбы'}[c.drawer_side]||'Справа')]]:[])
+ ...(c.kind==='desk'?[['Основание',c.leg_style==='metal'?'Металлические опоры':'Боковины ЛДСП'],['Ящики',String(c.drawer_count)],['Расположение ящиков',c.drawer_count===0?'Без ящиков':({left:'Слева',right:'Справа',none:'Без тумбы'}[c.drawer_side]||'Справа')]]:[]),
+ ...(c.kind==='kitchen'?[['Планировка','Прямая'],['Нижние модули',c.module_count+' шт.'],['Верхние шкафы',c.upper_cabinets===false?'Нет':c.upper_count+' шт.'],['Столешница',({stone:'Камень светлый',graphite:'Камень тёмный',oak:'Под дерево'}[c.countertop]||'Камень светлый')],['Фартук',({tile:'Плитка светлая',dark:'Плитка тёмная',plain:'Гладкий'}[c.backsplash]||'Плитка светлая')],['Мойка',({left:'Слева',center:'По центру',right:'Справа'}[c.sink_position]||'Слева')],['Варочная панель',({left:'Слева',center:'По центру',right:'Справа'}[c.hob_position]||'Справа')]]:[])
  ];
  return <div className="wc-details">{rows.map(([key,val],i)=><div key={i}><b>{key}</b><span>{val}</span></div>)}</div>;
 }
@@ -137,7 +142,22 @@ function CustomFurniture({kind,supabase}){
  const [sending,setSending]=useState(false),[submitted,setSubmitted]=useState(false),[error,setError]=useState('');
  const meta=TYPES.find(x=>x.id===kind);
  const limits=SPEC[kind].limits;
- const edit=(key,value)=>setConfig(c=>({...c,[key]:value}));
+ const maxKitchenModules=kind==='kitchen'?Math.min(6,Math.max(2,Math.floor(config.width_cm/45))):6;
+ const kitchenPositions=[{value:'left',label:'Слева'},...(config.module_count>=3?[{value:'center',label:'По центру'}]:[]),{value:'right',label:'Справа'}];
+ const edit=(key,value)=>setConfig(c=>{
+  const next={...c,[key]:value};
+  if(kind==='kitchen'){
+   const max=Math.min(6,Math.max(2,Math.floor(next.width_cm/45)));
+   next.module_count=Math.min(next.module_count,max);
+   next.upper_count=Math.min(next.upper_count,max);
+   if(next.module_count===2){
+    if(next.sink_position==='center')next.sink_position='left';
+    if(next.hob_position==='center')next.hob_position='right';
+   }
+   if(next.sink_position===next.hob_position)next.hob_position=next.sink_position==='right'?'left':'right';
+  }
+  return next;
+ });
  const reset=()=>{setConfig(initialConfig(kind));setSubmitted(false);setError('')};
  const changeDrawerSide=v=>setConfig(c=>({...c,drawer_side:v,drawer_count:v==='none'?0:(c.drawer_count||3)}));
  const changeDrawerCount=v=>setConfig(c=>({...c,drawer_count:v,drawer_side:v===0?'none':c.drawer_side==='none'?'right':c.drawer_side}));
@@ -158,7 +178,7 @@ function CustomFurniture({kind,supabase}){
   finally{setSending(false)}
  }
  return <div className="fc-content">
-  <div className="wc-page-heading fc-heading"><div><span className="wc-eyebrow">RIPIANO / КОНСТРУКТОР</span><h1>СОЗДАЙТЕ<br/>{meta.title}</h1></div><p>Подберите размеры, конструкцию и отделку. Мы получим ваш проект и рассчитаем стоимость изготовления.</p></div>
+  <div className="wc-page-heading fc-heading"><div><span className="wc-eyebrow">RIPIANO / КОНСТРУКТОР</span><h1>СОЗДАЙТЕ<br/>{meta.title}</h1></div><p>{kind==='kitchen'?'Соберите прямую кухню: задайте размеры, нижние и верхние шкафы, мойку, плиту и отделку. Получите предварительный эскиз для расчёта.':'Подберите размеры, конструкцию и отделку. Мы получим ваш проект и рассчитаем стоимость изготовления.'}</p></div>
   <div className="wc-workspace">
    <div className="wc-preview-column">
     <div className="wc-preview-card">
@@ -169,16 +189,27 @@ function CustomFurniture({kind,supabase}){
    </div>
    <div className="wc-controls">
     <section className="wc-control-card">
-     <div className="wc-section-title"><span>01</span><h2>Размеры {kind==='desk'?'стола':kind==='dresser'?'комода':'стеллажа'}</h2></div>
+     <div className="wc-section-title"><span>01</span><h2>Размеры {kind==='kitchen'?'кухни':kind==='desk'?'стола':kind==='dresser'?'комода':'стеллажа'}</h2></div>
      <div className="fc-dimensions">
       <DimensionField label="Ширина" value={config.width_cm} min={limits.width_cm[0]} max={limits.width_cm[1]} onChange={v=>edit('width_cm',v)}/>
       <DimensionField label="Высота" value={config.height_cm} min={limits.height_cm[0]} max={limits.height_cm[1]} onChange={v=>edit('height_cm',v)}/>
       <DimensionField label="Глубина" value={config.depth_cm} min={limits.depth_cm[0]} max={limits.depth_cm[1]} onChange={v=>edit('depth_cm',v)}/>
      </div>
-     <p className="wc-hint">Размеры в сантиметрах. Окончательные допустимые габариты подтвердим после проверки проекта.</p>
+     <p className="wc-hint">{kind==='kitchen'?'Ширина — длина прямой кухни. Высота — до верха гарнитура. Глубина — нижних шкафов. Реальные зазоры для техники и коммуникаций уточнит мастер.':'Размеры в сантиметрах. Окончательные допустимые габариты подтвердим после проверки проекта.'}</p>
     </section>
     <section className="wc-control-card">
-     <div className="wc-section-title"><span>02</span><h2>{kind==='shelf'?'Секции и полки':kind==='desk'?'Опоры и тумба':'Ящики и основание'}</h2></div>
+     <div className="wc-section-title"><span>02</span><h2>{kind==='kitchen'?'Модули и техника':kind==='shelf'?'Секции и полки':kind==='desk'?'Опоры и тумба':'Ящики и основание'}</h2></div>
+     {kind==='kitchen'&&<div className="fc-kitchen-fields">
+      <div className="fc-kitchen-hint">Прямая кухня · напольные и навесные модули</div>
+      <OptionSelect label="Нижние шкафы" value={String(config.module_count)} values={numberOptions(2,maxKitchenModules,'шт.')} onChange={v=>edit('module_count',Number(v))}/>
+      <label className="fc-check"><input type="checkbox" checked={config.upper_cabinets!==false} onChange={e=>edit('upper_cabinets',e.target.checked)}/><span>Верхние шкафы</span></label>
+      {config.upper_cabinets!==false&&<OptionSelect label="Верхние модули" value={String(config.upper_count)} values={numberOptions(2,maxKitchenModules,'шт.')} onChange={v=>edit('upper_count',Number(v))}/>}
+      <div className="fc-kitchen-pair">
+       <OptionSelect label="Мойка" value={config.sink_position} values={kitchenPositions.filter(p=>p.value!==config.hob_position)} onChange={v=>edit('sink_position',v)}/>
+       <OptionSelect label="Варочная панель" value={config.hob_position} values={kitchenPositions.filter(p=>p.value!==config.sink_position)} onChange={v=>edit('hob_position',v)}/>
+      </div>
+      <p className="wc-hint">Положение техники предварительное. Воду, электричество, вентиляцию и реальные размеры приборов уточняют перед производством.</p>
+     </div>}
      {kind==='dresser'&&<>
       <OptionSelect label="Количество ящиков" value={String(config.drawer_count)} values={numberOptions(2,8,'шт.')} onChange={v=>edit('drawer_count',Number(v))}/>
       <OptionSelect label="Основание" value={config.leg_style} values={[{value:'plinth',label:'Цоколь'},{value:'legs',label:'На ножках'}]} onChange={v=>edit('leg_style',v)}/>
@@ -196,9 +227,13 @@ function CustomFurniture({kind,supabase}){
     </section>
     <section className="wc-control-card">
      <div className="wc-section-title"><span>03</span><h2>Цвет и отделка</h2></div>
-     <MaterialPicker title="Корпус / основа" value={config.body_color} onChange={v=>edit('body_color',v)}/>
-     {kind!=='shelf'&&<MaterialPicker title="Фасады / ящики" value={config.facade_color} onChange={v=>edit('facade_color',v)}/>}
+     <MaterialPicker title={kind==='kitchen'?'Корпус шкафов':'Корпус / основа'} value={config.body_color} onChange={v=>edit('body_color',v)}/>
+     {kind!=='shelf'&&<MaterialPicker title={kind==='kitchen'?'Фасады кухни':'Фасады / ящики'} value={config.facade_color} onChange={v=>edit('facade_color',v)}/>}
      {kind!=='shelf'&&<OptionSelect label="Ручки" value={config.handles} values={HANDLE_OPTIONS.map(t=>({value:t.id,label:t.name}))} onChange={v=>edit('handles',v)}/>}
+     {kind==='kitchen'&&<>
+      <OptionSelect label="Столешница" value={config.countertop} values={[{value:'stone',label:'Камень светлый'},{value:'graphite',label:'Камень тёмный'},{value:'oak',label:'Под дерево'}]} onChange={v=>edit('countertop',v)}/>
+      <OptionSelect label="Кухонный фартук" value={config.backsplash} values={[{value:'tile',label:'Плитка светлая'},{value:'dark',label:'Плитка тёмная'},{value:'plain',label:'Гладкий'}]} onChange={v=>edit('backsplash',v)}/>
+     </>}
     </section>
    </div>
   </div>
@@ -229,7 +264,7 @@ export default function FurnitureConstructor({supabase}){
   <div className="fc-selector"><div className="fc-selector-head"><span className="wc-eyebrow">ВЫБЕРИТЕ МЕБЕЛЬ</span><h2>Что будем создавать?</h2></div>
    <div className="fc-types" role="group" aria-label="Тип мебели">
     {TYPES.map(t=><button type="button" key={t.id} className={type===t.id?'active':''} aria-pressed={type===t.id} onClick={()=>setType(t.id)}>
-      <span className="fc-type-icon">{t.id==='wardrobe'?'▥':t.id==='dresser'?'▤':t.id==='shelf'?'▦':'▱'}</span>
+      <span className="fc-type-icon">{t.id==='kitchen'?'▤':t.id==='wardrobe'?'▥':t.id==='dresser'?'▤':t.id==='shelf'?'▦':'▱'}</span>
       <span>{t.name}</span>{type===t.id&&<Check size={16}/>}
     </button>)}
    </div>
