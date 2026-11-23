@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {kitchenBaseModules,kitchenSlotIndex} from './kitchen-config.js';
 
 // Parametric straight kitchen: metric measurements, shared cabinet planes and real cut-out for the sink.
 // Preliminary customer visualization only: final technical drawings and fit must be verified by a cabinet maker.
@@ -17,9 +16,13 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
  const t=.018, gap=.003;
  const foot=.10, counterTop=.91, counterThickness=.035;
  const counterBottom=counterTop-counterThickness, caseH=counterBottom-foot;
- const sinkI=kitchenSlotIndex(sinkChoice,n);
- let hobI=kitchenSlotIndex(hobChoice,n);
- const baseModules=kitchenBaseModules(cfg);
+ const pick=i=>i==='right'?n-1:i==='center'?Math.floor((n-1)/2):0;
+ const moduleChoice=(value,fallback)=>{
+  const index=Math.round(Number(value));
+  return Number.isFinite(index)&&index>=1&&index<=n?index-1:fallback;
+ };
+ const sinkI=moduleChoice(cfg.sink_cabinet,pick(sinkChoice));
+ let hobI=moduleChoice(cfg.hob_cabinet,pick(hobChoice));
  if(hobI===sinkI)hobI=(sinkI===n-1?0:n-1);
  const sinkX=-w/2+(sinkI+.5)*bay;
  const hobX=-w/2+(hobI+.5)*bay;
@@ -78,53 +81,12 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
    piece(t,caseH,d-.025,x+(i===0?-bay/2+t/2:bay/2-t/2),foot+caseH/2,-.006,body);
   if(i<n-1)
    piece(t,caseH-2*t,d-.035,-w/2+(i+1)*bay,foot+caseH/2,-.01,body);
-  // All closed fronts share the same front plane and exact 3 mm vertical joint.
-  // Drawer fronts are independent, with the number of horizontal gaps chosen by the customer.
-  const module=baseModules[i];
-  if(module.type==='drawers'){
-   const drawerCount=module.drawers;
-   const rowH=(caseH-.014-(drawerCount-1)*gap)/drawerCount;
-   const maxTrayDepth=Math.min(d-.082,.47);
-   const openTravel=cfg.drawers_open?Math.min(.30,maxTrayDepth*.61):0;
-   const trayW=Math.max(.18,bay-2*t-.045);
-   const trayH=Math.min(.12,Math.max(.055,rowH-.065));
-   for(let j=0;j<drawerCount;j++){
-    const cy=foot+.007+(j+.5)*rowH+j*gap;
-    const frontZ=d/2+.012+openTravel;
-    // A single face with a rounded edge for each drawer, fixed flush when closed.
-    addRound(bay-gap,rowH,.018,x,cy,frontZ,facade,.0014);
-    if(cfg.handles!=='hidden'){
-     const pullW=Math.min(.155,trayW*.35);
-     addRound(pullW,.012,.013,x,cy,frontZ+.018,metal,.0025);
-     for(const offset of [-pullW*.34,pullW*.34]){
-      addRound(.006,.008,.015,x+offset,cy,frontZ+.012,steel,.001);
-     }
-    }
-    // An actual open-top drawer box with bottom and side walls, sliding in Z with the face.
-    // Tray is shorter than cabinet depth to avoid clashing with the rear wall.
-    const boxFrontZ=d/2-.022+openTravel;
-    const boxBackZ=boxFrontZ-maxTrayDepth;
-    const boxZ=(boxFrontZ+boxBackZ)/2;
-    const boxY=cy-rowH*.38;
-    piece(trayW,.008,maxTrayDepth,x,boxY,boxZ,inner);
-    for(const side of [-1,1]){
-     piece(.010,trayH,maxTrayDepth,x+side*(trayW/2-.005),boxY+trayH/2,boxZ,body);
-    }
-    piece(trayW-.010,trayH,.010,x,boxY+trayH/2,boxBackZ+.005,body);
-    piece(trayW-.010,trayH,.010,x,boxY+trayH/2,boxFrontZ-.005,body);
-    // Fixed metal runners, visible next to the tray when it is extended.
-    for(const side of [-1,1]){
-     piece(.006,.014,Math.min(maxTrayDepth*.7,d-.13),
-      x+side*(bay/2-t-.014),boxY+.038,d/2-Math.min(maxTrayDepth*.7,d-.13)/2-.024,steel);
-    }
-   }
-  }else{
-   addRound(bay-gap,caseH-.013,.018,x,foot+caseH/2,d/2+.012,facade,.0015);
-   if(cfg.handles!=='hidden'){
-    const pullX=x+bay*.39;
-    addRound(.013,.15,.013,pullX,foot+caseH*.70,d/2+.03,metal,.003);
-    for(const off of [-.047,.047])piece(.006,.007,.018,pullX,foot+caseH*.70+off,d/2+.020,steel);
-   }
+  // Fronts: common Z plane, 3 mm side joints, no protruding or crooked facades.
+  addRound(bay-gap,caseH-.013,.018,x,foot+caseH/2,d/2+.012,facade,.0015);
+  if(cfg.handles!=='hidden'){
+   const pullX=x+bay*.39;
+   addRound(.013,.15,.013,pullX,foot+caseH*.70,d/2+.03,metal,.003);
+   for(const off of [-.047,.047])piece(.006,.007,.018,pullX,foot+caseH*.70+off,d/2+.020,steel);
   }
  }
  // Stainless sink recessed into the opening, with four true inner walls.
