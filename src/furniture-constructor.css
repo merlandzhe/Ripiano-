@@ -6,7 +6,7 @@
 .fc-selector{max-width:1360px;width:calc(100% - 80px);margin:35px auto 0;padding:26px 28px;background:#eeebe5}
 .fc-selector-head{display:flex;justify-content:space-between;align-items:baseline;gap:18px;margin-bottom:20px}
 .fc-selector-head h2{margin:0;font-size:23px;line-height:1.1;letter-spacing:-.035em}
-.fc-types{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fc-types{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
 .fc-types>button{display:flex;align-items:center;gap:12px;min-width:0;background:#f7f5f1;border:1px solid #d2cdc4;padding:14px 15px;min-height:64px;text-align:left;font-size:14px;font-weight:600;transition:background .15s,border-color .15s}
 .fc-types>button.active{border-color:#242320;background:#fff}
 .fc-types>button>svg{margin-left:auto;flex-shrink:0}
@@ -54,4 +54,26 @@
  .fc-dimension-value input{font-size:16px}
  .fc-dimension>span{font-size:11px}
  .fc-content .wc-preview-column{position:static}
+}
+
+
+/* Kitchen configurator and fifth category */
+.fc-kitchen-fields{display:flex;flex-direction:column;gap:3px}
+.fc-kitchen-hint{display:inline-flex;align-self:flex-start;padding:8px 10px;border-radius:5px;background:#eee8df;color:#655747;font-size:11px;font-weight:600;margin-bottom:14px}
+.fc-kitchen-fields .fc-check{padding-top:1px;margin-top:-4px}
+.fc-kitchen-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fc-kitchen-pair .wc-select-label{min-width:0}
+.fc-kitchen-pair select{min-width:0}
+.fc-kitchen-fields>.wc-hint{margin:-1px 0 3px}
+.fc-kitchen-drawing{max-width:680px;margin:13px auto 0}
+.fc-kitchen-drawing svg{height:auto;max-height:400px}
+@media(max-width:950px){
+ .fc-types{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:680px){
+ .fc-types{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .fc-types>button:last-child:nth-child(odd){grid-column:1 / -1}
+ .fc-kitchen-pair{gap:8px}
+ .fc-kitchen-pair select{font-size:13px}
+ .fc-kitchen-hint{font-size:10px}
 }
