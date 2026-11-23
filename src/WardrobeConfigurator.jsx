@@ -1,10 +1,11 @@
 
 import React,{useEffect,useState} from 'react';
-import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
+import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send,Pencil} from 'lucide-react';
 import './wardrobe-configurator.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
+import SketchToWardrobe from './SketchToWardrobe.jsx';
 
 const COLOR_OPTIONS=[
  {id:'white',name:'Белый',hex:'#f6f3ed'},
@@ -164,6 +165,16 @@ export default function WardrobeConfigurator({supabase}){
  };
  const editSection=(key,value)=>setConfig(c=>({...c,sections:c.sections.map((sec,i)=>i===active?{...sec,[key]:value}:sec)}));
  const section=config.sections[active]||config.sections[0];
+ const applySketch=sections=>{
+  if(!Array.isArray(sections)||sections.length<2||sections.length>6)return;
+  setConfig(c=>({...c,sections:sections.map(item=>({
+   kind:FILL_OPTIONS.some(x=>x.id===item.kind)?item.kind:'shelves',
+   shelves:clamp(item.shelves??4,2,6),
+   drawers:clamp(item.drawers??3,1,4)
+  }))}));
+  setActive(0);
+  setDoors(false);
+ };
  async function submit(e){
   e.preventDefault();
   if(sending||submitted)return;
@@ -191,8 +202,13 @@ export default function WardrobeConfigurator({supabase}){
   <div className="wc-page-heading"><div><div className="wc-eyebrow">RIPIANO / КОНСТРУКТОР 01</div><h1>СОЗДАЙТЕ<br/>СВОЙ ШКАФ</h1></div><p>Выберите размеры, наполнение и отделку. Мы получим эскиз вашего проекта и рассчитаем стоимость изготовления.</p></div>
   <div className="wc-workspace">
    <div className="wc-preview-column">
-    <div className="wc-preview-card">
-     <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div><button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button></div>
+    <div className="wc-preview-card" id="ripiano-wardrobe-view">
+     <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div>
+       <div className="wc-preview-actions">
+        <button type="button" className="wc-sketch-open" onClick={()=>document.getElementById('ripiano-sketch')?.scrollIntoView({behavior:'smooth',block:'start'})}><Pencil size={15}/> По рисунку</button>
+        <button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button>
+       </div>
+      </div>
      <FurniturePreviewSwitch config={config} doors={doors} twoD={<WardrobePreview config={config} doors={doors}/>}/>
      <div className="wc-preview-toggle" role="group" aria-label="Положение дверей">
        <button type="button" className={doors?'active':''} aria-pressed={doors} onClick={()=>setDoors(true)}>Двери закрыты</button>
@@ -203,6 +219,7 @@ export default function WardrobeConfigurator({supabase}){
     </div>
    </div>
    <div className="wc-controls">
+    <SketchToWardrobe onApply={applySketch}/>
     <section className="wc-control-card"><div className="wc-section-title"><span>01</span><h2>Габариты шкафа</h2></div>
      <div className="wc-numbers">
       <ConfigNumber label="Ширина" value={config.width_cm} min={80} max={300} onChange={v=>edit('width_cm',v)}/>
