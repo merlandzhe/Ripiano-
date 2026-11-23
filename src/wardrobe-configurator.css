@@ -114,3 +114,23 @@
  .wc-primary{min-height:51px}
  .wc-admin-item .wc-diagram{max-width:300px}
 }
+
+
+/* 2026 improved wardrobe configurator */
+.wc-preview-card{border:1px solid #ded8cf;border-radius:14px;background:#f1eee8}
+.wc-preview-header b{font-size:19px}
+.wc-preview-toggle{border-radius:11px;padding:4px;gap:4px;margin:7px auto 7px;display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:390px}
+.wc-preview-toggle button{border-radius:8px;min-height:44px;padding:10px 13px;font-size:12px}
+.wc-preview-toggle button:focus-visible{outline:2px solid #6f5f4b;outline-offset:3px}
+.wc-draft-hint{font-size:11px;line-height:1.5;color:#6a675f;text-align:center;margin:0 0 13px}
+.wc-number>div:focus-within{border-color:#8c7558;box-shadow:0 0 0 2px #8c75581f}
+.wc-color-choice{border-radius:8px;min-height:49px}
+.wc-color-choice:focus-visible,.wc-section-tabs button:focus-visible,.wc-fills button:focus-visible{outline:2px solid #7d6951;outline-offset:2px}
+.wc-control-card{border-radius:12px}
+@media(max-width:680px){
+ .wc-preview-card{padding:14px}
+ .wc-control-card{padding:18px}
+ .wc-number>div{min-height:49px}
+ .wc-preview-toggle{margin-top:12px}
+ .wc-draft-hint{font-size:10px}
+}
