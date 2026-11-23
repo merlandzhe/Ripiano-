@@ -244,7 +244,7 @@ function CustomFurniture({kind,supabase}){
        </div>
        {activeKitchenModule===sinkModule?
         <p className="fc-kitchen-sink-note">Секция {activeKitchenModule+1} находится под мойкой. Здесь оставлена дверца, чтобы не мешать чаше мойки и сантехнике. Для ящиков выберите другую секцию.</p>
-        <div className="fc-kitchen-module-editor">
+        :<div className="fc-kitchen-module-editor">
          <OptionSelect label={'Секция '+(activeKitchenModule+1)} value={activeKitchenLayout.type}
           values={[{value:'door',label:'Дверца'},{value:'drawers',label:'Выдвижные ящики'}]}
           onChange={v=>changeKitchenModule('type',v)}/>
