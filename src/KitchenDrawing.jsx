@@ -1,4 +1,5 @@
 import React from 'react';
+import {kitchenBaseModules,kitchenSlotIndex} from './kitchen-config.js';
 
 // Customer-facing elevation, not a fabrication drawing.
 export default function KitchenDrawing({config={}}){
@@ -18,8 +19,8 @@ export default function KitchenDrawing({config={}}){
  const face={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'}[config.facade_color]||'#f5f2e9';
  const topColor={stone:'#e4ded4',graphite:'#4b4b49',oak:'#c1a079'}[config.countertop]||'#e4ded4';
  const handle=config.handles!=='hidden';
- const pick=v=>v==='right'?baseCount-1:v==='center'?Math.floor((baseCount-1)/2):0;
- const sink=pick(config.sink_position),hobRaw=pick(config.hob_position);
+ const sink=kitchenSlotIndex(config.sink_position,baseCount),hobRaw=kitchenSlotIndex(config.hob_position,baseCount);
+ const baseModules=kitchenBaseModules(config);
  const hob=hobRaw===sink?(sink===baseCount-1?0:baseCount-1):hobRaw;
  const labels=(name,location)=>x+(location+.5)*w/baseCount;
  return <div className="wc-diagram fc-drawing fc-kitchen-drawing">
@@ -30,9 +31,22 @@ export default function KitchenDrawing({config={}}){
    <rect x={x} y={baseY} width={w} height={h-(baseY-y)-10*scale} fill={body} stroke="#9a8e7f" strokeWidth="1"/>
    {Array.from({length:baseCount},(_,i)=>{
     const bx=x+i*w/baseCount,bw=w/baseCount;
+    const module=baseModules[i];
+    const top=baseY+2,frontH=plinthY-baseY-3;
     return <g key={'base'+i}>
-     <rect x={bx+1.5} y={baseY+2} width={bw-3} height={plinthY-baseY-3} fill={face} stroke="#ab9d8d" strokeWidth=".75"/>
-     {handle&&<rect x={bx+bw-7} y={baseY+6} width="2.5" height={Math.max(8,14*scale)} fill="#77736d" rx="1"/>}
+     {module.type==='drawers'?
+      Array.from({length:module.drawers},(_,j)=>{
+       const rowH=frontH/module.drawers;
+       const ry=top+j*rowH;
+       return <g key={'drawer'+j}>
+        <rect x={bx+1.5} y={ry+1} width={bw-3} height={Math.max(2,rowH-2)} fill={face} stroke="#ab9d8d" strokeWidth=".75"/>
+        {handle&&<rect x={bx+bw*.33} y={ry+rowH*.52-1.3} width={bw*.34} height="2.6" rx="1.3" fill="#77736d"/>}
+       </g>;
+      }):
+      <>
+       <rect x={bx+1.5} y={top} width={bw-3} height={frontH} fill={face} stroke="#ab9d8d" strokeWidth=".75"/>
+       {handle&&<rect x={bx+bw-7} y={baseY+6} width="2.5" height={Math.max(8,14*scale)} fill="#77736d" rx="1"/>}
+      </>}
     </g>;
    })}
    <rect x={x+4} y={plinthY} width={w-8} height={10*scale} fill={body} stroke="#b0a395" strokeWidth=".7"/>
