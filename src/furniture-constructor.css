@@ -77,3 +77,26 @@
  .fc-kitchen-pair select{font-size:13px}
  .fc-kitchen-hint{font-size:10px}
 }
+
+
+/* RIPIANO kitchen: select closed drawer or door fronts for lower sections. */
+.fc-kitchen-modules{border-top:1px solid #ded7cc;padding-top:17px;margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.fc-kitchen-modules-heading{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.fc-kitchen-modules-heading strong{font-size:13px;font-weight:650;color:#2d2923}
+.fc-kitchen-modules-heading span{font-size:11px;color:#81786e}
+.fc-kitchen-module-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(55px,1fr));gap:7px}
+.fc-kitchen-module-buttons button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:68px;padding:8px 3px;border:1px solid #d7d0c6;border-radius:7px;background:#f8f6f2;color:#62584d}
+.fc-kitchen-module-buttons button.active{border-color:#76624b;background:#e9dfd1;box-shadow:0 0 0 1px #76624b22;color:#30291e}
+.fc-kitchen-module-buttons button b{font-size:15px;font-weight:700}
+.fc-kitchen-module-buttons button small{font-size:10px;line-height:1.25;white-space:nowrap}
+.fc-kitchen-module-buttons button:focus-visible,.fc-kitchen-module-editor select:focus-visible{outline:2px solid #8d7252;outline-offset:2px}
+.fc-kitchen-module-editor{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:end;padding:13px;background:#fbf9f5;border:1px solid #e1dbd2;border-radius:8px}
+.fc-kitchen-module-editor .wc-select-label,.fc-kitchen-module-editor select{min-width:0;max-width:100%}
+.fc-kitchen-sink-note{margin:0;padding:12px 13px;border-radius:7px;background:#eee9e1;color:#5b5146;font-size:12px;line-height:1.5}
+@media(max-width:680px){
+ .fc-kitchen-modules{margin-top:15px;padding-top:15px}
+ .fc-kitchen-module-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .fc-kitchen-module-buttons button{min-height:64px}
+ .fc-kitchen-module-editor{grid-template-columns:1fr;gap:5px}
+ .fc-kitchen-module-editor select{font-size:14px;min-height:42px}
+}
