@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {kitchenBaseModules} from './kitchen-config.js';
+import {kitchenBaseModules,kitchenDoorStyle} from './kitchen-config.js';
 import {createKitchenFacadePainter} from './kitchen-facades-3d.js';
 
 // Parametric straight kitchen: metric measurements, shared cabinet planes and real cut-out for the sink.
@@ -101,7 +101,7 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
     const frontZ=d/2+.012;
     // A single face with a rounded edge for each drawer, fixed flush when closed.
     paintFacade({x,y:cy,z:frontZ,width:bay-gap,height:rowH,
-     style:lowerStyle,glass:cfg.lower_glass_type||'clear',
+     style:kitchenDoorStyle(lowerStyle,i,n),glass:cfg.lower_glass_type||'clear',
      grid:cfg.lower_glass_grid===true,drawer:true});
     if(cfg.handles!=='hidden'){
      const pullW=Math.min(.155,trayW*.35);
@@ -130,7 +130,7 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
    }
   }else{
    paintFacade({x,y:foot+caseH/2,z:d/2+.012,width:bay-gap,height:caseH-.013,
-    style:lowerStyle,glass:cfg.lower_glass_type||'clear',grid:cfg.lower_glass_grid===true});
+    style:kitchenDoorStyle(lowerStyle,i,n),glass:cfg.lower_glass_type||'clear',grid:cfg.lower_glass_grid===true});
    if(cfg.handles!=='hidden'){
     const pullX=x+bay*.39;
     addRound(.013,.15,.013,pullX,foot+caseH*.70,d/2+.03,metal,.003);
@@ -190,12 +190,12 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
    if(i===0||i===upperN-1)
     piece(t,upperH,upperD,cx+(i===0?-uw/2+t/2:uw/2-t/2),bottomY+upperH/2,upperCenter,body);
    if(i<upperN-1)piece(t,upperH-2*t,upperD-.02,-w/2+(i+1)*uw,bottomY+upperH/2,upperCenter,body);
-   if(upperStyle==='glass'){
+   if(kitchenDoorStyle(upperStyle,i,upperN)==='glass'){
     // Visible inside upper glazed cabinets, unlike an opaque decorative decal.
     piece(Math.max(.04,uw-2*t-.008),t,upperD-.035,cx,bottomY+upperH*.48,upperCenter,body);
    }
    paintFacade({x:cx,y:bottomY+upperH/2,z:upperFront,width:uw-gap,height:upperH-.011,
-    style:upperStyle,glass:cfg.upper_glass_type||'clear',grid:cfg.upper_glass_grid===true});
+    style:kitchenDoorStyle(upperStyle,i,upperN),glass:cfg.upper_glass_type||'clear',grid:cfg.upper_glass_grid===true});
    if(cfg.handles!=='hidden'){
     const px=cx+uw*.39;
     addRound(.012,.11,.012,px,bottomY+.16,upperFront+.018,metal,.0025);
