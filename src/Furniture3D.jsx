@@ -28,7 +28,7 @@ function woodGrain(hex){
  return tex;
 }
 
-function buildModel(group,configuration,showDoors){
+function buildModel(group,configuration,showDoors,doorView){
  const cfg=configuration||{};
  const kind=cfg.kind||'wardrobe';
  const w=meter(bound(cfg.width_cm,40,300,180));
@@ -101,13 +101,17 @@ function buildModel(group,configuration,showDoors){
     }
    }
   }
-  // Identical facades with a 2.5 mm joint. Opening rotates the complete door + handle.
-  for(let i=0;i<count;i++){
+  // Three reliable views: closed, fully swung open, or interior with fronts hidden.
+  // On the outside edges, hinges face outward (leftmost -> left, rightmost -> right).
+  // Interior bays alternate so the closing edges and handles face correctly.
+  const view=doorView|| (showDoors?'closed':'interior');
+  if(view!=='interior')for(let i=0;i<count;i++){
    const x=-w/2+margin+i*(doorWidth+gap)+doorWidth/2;
-   const left=i%2===0;
+   const left=i===0||(i!==count-1&&i%2===0);
    const pivot=new THREE.Group();
    pivot.position.set(x+(left?-doorWidth/2:doorWidth/2),0,frontZ+faceDepth/2);
-   pivot.rotation.y=showDoors?0:(left?-.92:.92);
+   // A 112-degree outward swing reveals the shelves; no partially closed doors.
+   pivot.rotation.y=view==='open'?(left?-1:1)*Math.PI*112/180:0;
    group.add(pivot);
    const face=new THREE.Mesh(new RoundedBoxGeometry(doorWidth,faceHeight,faceDepth,2,.0011),facade);
    face.position.set(left?doorWidth/2:-doorWidth/2,plinth+.003+faceHeight/2,0);
@@ -183,7 +187,7 @@ function disposeGroup(group){
  group.traverse(node=>{if(node.geometry)node.geometry.dispose()});
  group.clear();
 }
-export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
+export default function Furniture3D({config,showDoors=false,doorView,resetKey=0,onFail}){
  const canvas=useRef(null),session=useRef(null),fallback=useRef(onFail);
  fallback.current=onFail;
  useEffect(()=>{
@@ -284,13 +288,21 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
   disposeGroup(live.group);
   for(const m of live.materials)m.dispose();
   for(const texture of live.textures||[])texture.dispose();
-  const result=buildModel(live.group,config,showDoors);
+  const result=buildModel(live.group,config,showDoors,doorView);
   live.materials=result.materials;
   live.textures=result.textures;
   const fitKey=[config?.kind||'wardrobe',result.w,result.h,result.d].join('|');
   if(live.lastFit!==fitKey){live.lastFit=fitKey;live.fit?.(result.w,result.h,result.d);}
+  // Center the camera on the front in the interior mode so every shelf is visible.
+  if((config?.kind||'wardrobe')==='wardrobe' && doorView==='interior' && live.lastDoorView!=='interior'){
+   const size=Math.max(result.w,result.h);
+   live.camera.position.set(0,result.h*.62,size*1.65+result.d);
+   live.controls.target.set(0,result.h*.52,0);
+   live.controls.update();
+  }
+  live.lastDoorView=doorView;
   live.schedule();
- },[config,showDoors]);
+ },[config,showDoors,doorView]);
  useEffect(()=>{
   const live=session.current;if(!live||resetKey===0)return;
   const cfg=config||{};
