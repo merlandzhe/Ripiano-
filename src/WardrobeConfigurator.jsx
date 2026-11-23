@@ -1,5 +1,5 @@
 
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
 import './wardrobe-configurator.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
@@ -35,6 +35,23 @@ const clamp=(value,min,max)=>{
 };
 function initialConfig(){
  return {version:1,width_cm:180,height_cm:220,depth_cm:55,body_color:'oak',facade_color:'white',handles:'black',sections:INITIAL_SECTIONS.map(x=>({...x}))};
+}
+const DRAFT_KEY='ripiano:wardrobe-draft:2026';
+function restoreDraft(){
+ const fallback=initialConfig();
+ try{
+  const saved=JSON.parse(window.localStorage.getItem(DRAFT_KEY)||'null');
+  if(!saved||!Array.isArray(saved.sections)||saved.sections.length<2||saved.sections.length>6)return fallback;
+  const safeSections=saved.sections.map(v=>({
+   kind:FILL_OPTIONS.some(x=>x.id===v?.kind)?v.kind:'shelves',
+   shelves:clamp(v?.shelves??4,2,6),
+   drawers:clamp(v?.drawers??3,1,4)
+  }));
+  return {...fallback,width_cm:clamp(saved.width_cm,80,300),height_cm:clamp(saved.height_cm,180,260),
+   depth_cm:clamp(saved.depth_cm,40,70),body_color:COLOR_OPTIONS.some(x=>x.id===saved.body_color)?saved.body_color:fallback.body_color,
+   facade_color:COLOR_OPTIONS.some(x=>x.id===saved.facade_color)?saved.facade_color:fallback.facade_color,
+   handles:HANDLE_OPTIONS.some(x=>x.id===saved.handles)?saved.handles:fallback.handles,sections:safeSections};
+ }catch{return fallback}
 }
 const colorHex=id=>COLOR_OPTIONS.find(c=>c.id===id)?.hex||'#f6f3ed';
 export const wardrobeKindLabel=kind=>LABELS[kind]||'Полки';
@@ -109,8 +126,14 @@ export function WardrobeDetails({config}){
 }
 
 function ConfigNumber({label,value,min,max,onChange}){
- const set=v=>{if(v===''||!Number.isFinite(Number(v)))return;onChange(clamp(v,min,max));};
- return <label className="wc-number"><span>{label}</span><div><input type="number" inputMode="numeric" min={min} max={max} value={value} onChange={e=>set(e.target.value)}/><em>см</em></div></label>;
+ const [draft,setDraft]=useState(String(value));
+ useEffect(()=>setDraft(String(value)),[value]);
+ const commit=()=>{const n=clamp(draft,min,max);setDraft(String(n));onChange(n)};
+ return <label className="wc-number"><span>{label}</span><div>
+  <input type="number" inputMode="numeric" min={min} max={max} value={draft}
+   onChange={e=>setDraft(e.target.value)} onBlur={commit}
+   onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();e.currentTarget.blur()}}}/>
+  <em>см</em></div></label>;
 }
 
 function ColorPicker({label,value,onChange}){
@@ -118,9 +141,13 @@ function ColorPicker({label,value,onChange}){
 }
 
 export default function WardrobeConfigurator({supabase}){
- const [config,setConfig]=useState(initialConfig);
+ const [config,setConfig]=useState(restoreDraft);
+ useEffect(()=>{
+  const timer=window.setTimeout(()=>{try{window.localStorage.setItem(DRAFT_KEY,JSON.stringify(config))}catch{}},300);
+  return ()=>window.clearTimeout(timer);
+ },[config]);
  const [active,setActive]=useState(0);
- const [doors,setDoors]=useState(false);
+ const [doors,setDoors]=useState(true);
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
  const [note,setNote]=useState('');
@@ -165,9 +192,13 @@ export default function WardrobeConfigurator({supabase}){
   <div className="wc-workspace">
    <div className="wc-preview-column">
     <div className="wc-preview-card">
-     <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div><button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(false)}}><RotateCcw size={15}/> Сбросить</button></div>
+     <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div><button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button></div>
      <FurniturePreviewSwitch config={config} doors={doors} twoD={<WardrobePreview config={config} doors={doors}/>}/>
-     <div className="wc-preview-toggle" role="group" aria-label="Вид шкафа"><button type="button" className={!doors?'active':''} aria-pressed={!doors} onClick={()=>setDoors(false)}>Внутри</button><button type="button" className={doors?'active':''} aria-pressed={doors} onClick={()=>setDoors(true)}>С дверями</button></div>
+     <div className="wc-preview-toggle" role="group" aria-label="Положение дверей">
+       <button type="button" className={doors?'active':''} aria-pressed={doors} onClick={()=>setDoors(true)}>Двери закрыты</button>
+       <button type="button" className={!doors?'active':''} aria-pressed={!doors} onClick={()=>setDoors(false)}>Открыть двери</button>
+      </div>
+      <p className="wc-draft-hint" role="status">Размеры и материалы автоматически сохраняются на этом устройстве.</p>
      <div className="wc-preview-note"><Ruler size={16}/><span>Схема для предварительного расчёта. Точные размеры деталей и конструкцию согласует мебельщик.</span></div>
     </div>
    </div>
