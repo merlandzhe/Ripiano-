@@ -62,3 +62,33 @@
  .wc-preview-header>div:first-child{min-width:125px}
  .wc-preview-header .wc-sketch-open{min-height:40px}
 }
+
+
+/* Preview and correct perspective-sketch recognition before building 3D. */
+.sketch-result-controls{display:grid;gap:13px;margin:14px 0}
+.sketch-count-label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:650;color:#4b443b}
+.sketch-count-label select{width:94px;min-height:40px}
+.sketch-result-controls select,.sketch-dimensions input{border:1px solid #d5cbbd;border-radius:7px;background:#faf8f4;padding:9px;color:#2b2722;font-size:13px;min-width:0}
+.sketch-edit-list{display:grid;gap:8px}
+.sketch-edit-section{display:grid;grid-template-columns:minmax(78px,1fr) minmax(100px,1.9fr) minmax(70px,1fr);gap:8px;align-items:center;padding:11px;border:1px solid #e8e2da;border-radius:9px;background:#fdfbf8}
+.sketch-edit-section>b{font-size:12px;font-weight:650;color:#413a31}
+.sketch-edit-section label{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:10px;color:#756a5f}
+.sketch-edit-section select{width:100%;max-width:100%;min-height:37px}
+.sketch-edit-section small{grid-column:1/-1;color:#876a4b;font-size:10px}
+.sketch-dimensions{border:1px solid #dcd3c6;border-radius:9px;padding:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0;min-width:0}
+.sketch-dimensions legend{font-size:12px;font-weight:650;color:#3f382f;padding:0 5px}
+.sketch-dimensions label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#71685c;min-width:0}
+.sketch-dimensions input{width:100%;font-size:15px;min-height:42px}
+.sketch-review-note{font-size:11px;line-height:1.5;color:#716558;margin:0}
+.sketch-result-controls select:focus-visible,.sketch-dimensions input:focus-visible{outline:2px solid #947957;outline-offset:2px}
+@media(max-width:640px){
+ .sketch-edit-section{grid-template-columns:1fr 1.4fr;gap:8px}
+ .sketch-edit-section label:last-of-type:not(:first-of-type){grid-column:2}
+ .sketch-edit-section>b{font-size:11px}
+ .sketch-dimensions{padding:9px;gap:6px}
+ .sketch-dimensions input{font-size:16px}
+}
+@media(max-width:350px){.sketch-dimensions{grid-template-columns:1fr}}
+
+.sketch-manual{display:flex;align-items:center;justify-content:center;min-height:42px;width:100%;margin-top:12px;border:1px solid #9a8062;border-radius:8px;background:#f7efe4;color:#55422c;font-size:12px;font-weight:650}
+.sketch-manual:focus-visible{outline:2px solid #947957;outline-offset:2px}

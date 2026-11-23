@@ -83,8 +83,12 @@ function buildModel(group,configuration,showDoors,doorView){
    if(i<count-1)piece(t,innerHeight,d-.045,x0+bay,plinth+t+innerHeight/2,-.012);
    if(sec.kind==='shelves'||sec.kind==='combined'){
     const n=sec.kind==='combined'?2:Math.round(bound(sec.shelves,2,6,4));
-    for(let j=1;j<=n;j++)
-     piece(shelfWidth,t,d-.065,cx,plinth+t+innerHeight*j/(n+1),-.012);
+    const layout=Array.isArray(sec.shelfPositions)&&sec.shelfPositions.length===n
+     ?sec.shelfPositions.filter(v=>Number.isFinite(Number(v))).map(v=>Math.max(.05,Math.min(.95,Number(v)))):null;
+    for(let j=1;j<=n;j++){
+     const position=layout&&layout.length===n?1-layout[j-1]:j/(n+1);
+     piece(shelfWidth,t,d-.065,cx,plinth+t+innerHeight*position,-.012);
+    }
    }
    if(sec.kind==='rail'||sec.kind==='combined'){
     const rod=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,Math.max(.05,shelfWidth-.05),12),rail);

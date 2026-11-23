@@ -11,13 +11,19 @@ const formatSections={
  combined:'Полки и штанга'
 };
 
-export default function SketchToWardrobe({onApply}){
+export default function SketchToWardrobe({onApply,dimensions}){
  const [mode,setMode]=useState('photo');
  const [photo,setPhoto]=useState('');
  const [imageName,setImageName]=useState('');
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [result,setResult]=useState(null);
+ const [measurements,setMeasurements]=useState(()=>({
+  width_cm:dimensions?.width_cm||180,height_cm:dimensions?.height_cm||220,depth_cm:dimensions?.depth_cm||55
+ }));
+ useEffect(()=>setMeasurements({
+  width_cm:dimensions?.width_cm||180,height_cm:dimensions?.height_cm||220,depth_cm:dimensions?.depth_cm||55
+ }),[dimensions?.width_cm,dimensions?.height_cm,dimensions?.depth_cm]);
  const [strokeCount,setStrokeCount]=useState(0);
  const drawing=useRef(null),photoCanvas=useRef(null),paths=useRef([]),current=useRef(null),loadToken=useRef(0);
  const inputId=React.useId();
@@ -114,9 +120,35 @@ export default function SketchToWardrobe({onApply}){
    setResult(null);setError('Не удалось разобрать рисунок. Попробуйте более чёткий эскиз.');
   }
  };
+ const updateSection=(index,field,value)=>{
+  setResult(prev=>{
+   if(!prev?.ok)return prev;
+   return {...prev,sections:prev.sections.map((section,i)=>{
+    if(i!==index)return section;
+    // Changing the count or type resets detected shelf heights to safe evenly spaced positions.
+    const next={...section,[field]:value};
+    if(field==='shelves'||field==='kind')delete next.shelfPositions;
+    return next;
+   })};
+  });
+ };
+ const changeCount=count=>setResult(prev=>{
+  if(!prev?.ok)return prev;
+  const n=Math.max(2,Math.min(6,Number(count)||2));
+  return {...prev,sections:Array.from({length:n},(_,i)=>prev.sections[i]||{kind:'shelves',shelves:4,drawers:3})};
+ });
+ const switchToManual=()=>{
+  setResult({
+   ok:true,confidence:'manual',
+   sections:[{kind:'shelves',shelves:4,drawers:3},{kind:'rail',shelves:4,drawers:3}],
+   guides:{verticals:[],horizontals:[]},
+   bounds:{left:0,top:0,right:WIDTH,bottom:HEIGHT},
+   message:'Автоматически прочитать чертёж не удалось. Задайте секции и габариты вручную ниже.'
+  });
+ };
  const apply=()=>{
   if(!result?.ok)return;
-  onApply(result.sections);
+  onApply(result.sections,measurements);
   setResult(null);
   document.getElementById('ripiano-wardrobe-view')?.scrollIntoView({behavior:'smooth',block:'start'});
  };
@@ -125,7 +157,7 @@ export default function SketchToWardrobe({onApply}){
    <div>
     <span className="wc-eyebrow">НОВЫЙ СПОСОБ ПРОЕКТИРОВАНИЯ</span>
     <h2 id="sketch-title">По рисунку от руки</h2>
-    <p>Сфотографируйте схему шкафа или нарисуйте её пальцем. Попробуем перенести секции и полки в 3D.</p>
+    <p>Загрузите чертёж спереди или в перспективе либо нарисуйте схему пальцем. Секции и высоту полок можно исправить до построения 3D.</p>
    </div>
    <div className="sketch-heading-icon"><Pencil size={24}/></div>
   </div>
@@ -138,13 +170,17 @@ export default function SketchToWardrobe({onApply}){
    <label htmlFor={inputId} className="sketch-upload-zone">
     <span className="sketch-upload-icon"><ImagePlus size={26}/></span>
     <strong>{photo?'Заменить рисунок':'Выбрать фото или сфотографировать'}</strong>
-    <span>{photo?imageName:'Чёткий рисунок спереди · JPG, PNG или фото с телефона'}</span>
+    <span>{photo?imageName:'Чертёж спереди или в перспективе · JPG, PNG, фото с телефона'}</span>
    </label>
    {photo&&<div className="sketch-image-stage">
      <img src={photo} alt="Загруженный рисунок шкафа" />
-     {result?.ok&&<svg className="sketch-guide" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+     {result?.ok&&result.confidence!=='manual'&&<svg className="sketch-guide" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
        <rect x={result.bounds.left} y={result.bounds.top} width={result.bounds.right-result.bounds.left} height={result.bounds.bottom-result.bounds.top} fill="none" stroke="#b07942" strokeWidth="3" strokeDasharray="8 7"/>
        {result.guides.verticals.map((x,i)=><line key={i} x1={x} x2={x} y1={result.bounds.top} y2={result.bounds.bottom} stroke="#b07942" strokeWidth="3" strokeDasharray="7 6"/>)}
+       {result.guides.horizontals.map((ys,i)=>{
+        const xs=[result.bounds.left,...result.guides.verticals,result.bounds.right];
+        return ys.map((y,j)=><line key={i+'-'+j} x1={xs[i]+5} x2={xs[i+1]-5} y1={y} y2={y+(xs[i+1]-xs[i])*.065} stroke="#b07942" strokeWidth="2.5" strokeDasharray="6 5"/>);
+       })}
       </svg>}
     </div>}
   </>:<div className="sketch-draw-wrap">
@@ -157,7 +193,7 @@ export default function SketchToWardrobe({onApply}){
     <button type="button" onClick={clear} disabled={!strokeCount}><Trash2 size={15}/> Очистить</button>
    </div>
   </div>}
-  <div className="sketch-tip"><Info size={16}/><p>Лучше всего работает <b>вид спереди</b>: внешний прямоугольник, вертикальные секции и горизонтальные полки. Числа на рисунке автоматически не считываются — размеры задаются в настройках ниже.</p></div>
+  <div className="sketch-tip"><Info size={16}/><p>Работают <b>простые чертежи спереди и в перспективе</b> с вертикальными перегородками и полками. Текст и цифры на рисунке автоматически не считываются — укажите общие габариты ниже.</p></div>
   {error&&<p className="sketch-error" role="alert"><AlertCircle size={16}/>{error}</p>}
   <button type="button" className="sketch-recognize" disabled={busy||mode==='photo'&&!photo||mode==='draw'&&!strokeCount} onClick={run}>
    <Sparkles size={18}/>{busy?'Обрабатываем фото…':'Распознать эскиз'}
@@ -165,9 +201,46 @@ export default function SketchToWardrobe({onApply}){
   {result&&<div className={'sketch-outcome '+(result.ok?'success':'warning')} role="status" aria-live="polite">
    {result.ok?<><h3><Check size={18}/> Найдено: {result.sections.length} секц.</h3>
     <p>{result.message}</p>
-    <div className="sketch-section-results">{result.sections.map((section,i)=><span key={i}>{i+1}. {formatSections[section.kind]||section.kind}{section.kind==='shelves'?` · ${section.shelves} полки`:section.kind==='drawers'?` · ${section.drawers} ящика`:''}</span>)}</div>
+    <div className="sketch-result-controls">
+     <label className="sketch-count-label">Количество секций
+      <select value={result.sections.length} onChange={e=>changeCount(e.target.value)}>
+       {[2,3,4,5,6].map(n=><option key={n} value={n}>{n}</option>)}
+      </select>
+     </label>
+     <div className="sketch-edit-list">{result.sections.map((section,i)=><div className="sketch-edit-section" key={i}>
+      <b>Секция {i+1}</b>
+      <label>Наполнение
+       <select value={section.kind} onChange={e=>updateSection(i,'kind',e.target.value)}>
+        {Object.entries(formatSections).map(([key,label])=><option value={key} key={key}>{label}</option>)}
+       </select>
+      </label>
+      {section.kind==='shelves'&&<label>Полок
+       <select value={section.shelves} onChange={e=>updateSection(i,'shelves',Number(e.target.value))}>
+        {[2,3,4,5,6].map(n=><option value={n} key={n}>{n}</option>)}
+       </select>
+      </label>}
+      {section.kind==='drawers'&&<label>Ящиков
+       <select value={section.drawers} onChange={e=>updateSection(i,'drawers',Number(e.target.value))}>
+        {[1,2,3,4].map(n=><option value={n} key={n}>{n}</option>)}
+       </select>
+      </label>}
+      {Array.isArray(section.shelfPositions)&&section.kind==='shelves'&&<small>Высота полок взята с рисунка</small>}
+     </div>)}</div>
+     <fieldset className="sketch-dimensions"><legend>Габариты шкафа, см</legend>
+      {[
+       {key:'width_cm',title:'Ширина',min:80,max:300},
+       {key:'height_cm',title:'Высота',min:180,max:260},
+       {key:'depth_cm',title:'Глубина',min:40,max:70}
+      ].map(item=><label key={item.key}>{item.title}
+       <input type="number" inputMode="numeric" min={item.min} max={item.max} value={measurements[item.key]}
+        onChange={e=>setMeasurements(prev=>({...prev,[item.key]:e.target.value}))}/>
+      </label>)}
+     </fieldset>
+     <p className="sketch-review-note">Проверьте размеры и наполнение: результат предварительный. Неправильно распознанные полки можно изменить здесь или после построения.</p>
+    </div>
     <button type="button" className="sketch-apply" onClick={apply}>Построить 3D по рисунку <Check size={17}/></button>
-   </>:<><h3><AlertCircle size={18}/> Нужна более простая схема</h3><p>{result.message}</p></>}
+   </>:<><h3><AlertCircle size={18}/> Не удалось распознать автоматически</h3><p>{result.message}</p>
+     <button type="button" className="sketch-manual" onClick={switchToManual}>Задать секции вручную</button></>}
   </div>}
   <p className="sketch-footnote">Это предварительная реконструкция, не готовый чертёж для производства. Фото остаётся в браузере и не отправляется на сервер.</p>
  </section>;
