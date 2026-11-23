@@ -209,7 +209,7 @@ function CustomFurniture({kind,supabase}){
        <OptionSelect label="Варочная панель" value={config.hob_position} values={kitchenPositions.filter(p=>p.value!==config.sink_position)} onChange={v=>edit('hob_position',v)}/>
       </div>
       <p className="wc-hint">Положение техники предварительное. Воду, электричество, вентиляцию и реальные размеры приборов уточняют перед производством.</p>
-     </div>
+     </div>}
      {kind==='dresser'&&<>
       <OptionSelect label="Количество ящиков" value={String(config.drawer_count)} values={numberOptions(2,8,'шт.')} onChange={v=>edit('drawer_count',Number(v))}/>
       <OptionSelect label="Основание" value={config.leg_style} values={[{value:'plinth',label:'Цоколь'},{value:'legs',label:'На ножках'}]} onChange={v=>edit('leg_style',v)}/>
