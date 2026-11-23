@@ -46,7 +46,9 @@ function restoreDraft(){
   const safeSections=saved.sections.map(v=>({
    kind:FILL_OPTIONS.some(x=>x.id===v?.kind)?v.kind:'shelves',
    shelves:clamp(v?.shelves??4,2,6),
-   drawers:clamp(v?.drawers??3,1,4)
+   drawers:clamp(v?.drawers??3,1,4),
+   ...(Array.isArray(v?.shelfPositions)&&v.shelfPositions.length===clamp(v?.shelves??4,2,6)
+    ?{shelfPositions:v.shelfPositions.map(p=>Math.max(.05,Math.min(.95,Number(p)||.5))).sort((a,b)=>a-b)}:{})
   }));
   return {...fallback,width_cm:clamp(saved.width_cm,80,300),height_cm:clamp(saved.height_cm,180,260),
    depth_cm:clamp(saved.depth_cm,40,70),body_color:COLOR_OPTIONS.some(x=>x.id===saved.body_color)?saved.body_color:fallback.body_color,
@@ -83,7 +85,7 @@ export function WardrobePreview({config,doors=false}){
      const len=sectionW-8;
      return <g key={i}>
        {i>0&&<rect x={bx-3} y={top} width="6" height={h-2*side} fill={wood} stroke="#a99e8f" strokeWidth=".5"/>}
-       {kind==='shelves'&&Array.from({length:shelves},(_,j)=><rect key={j} x={bx+4} y={top+(j+1)*(h-2*side)/(shelves+1)} width={len} height="3.5" fill={wood} stroke="#aea190" strokeWidth=".5"/>)}
+       {kind==='shelves'&&Array.from({length:shelves},(_,j)=><rect key={j} x={bx+4} y={top+(Array.isArray(sec.shelfPositions)&&sec.shelfPositions.length===shelves?sec.shelfPositions[j]:(j+1)/(shelves+1))*(h-2*side)} width={len} height="3.5" fill={wood} stroke="#aea190" strokeWidth=".5"/>)}
        {kind==='rail'&&<><line x1={bx+9} y1={top+25} x2={bx+sectionW-9} y2={top+25} stroke="#9c9b99" strokeWidth="3" strokeLinecap="round"/><path d={'M '+(bx+sectionW/2)+' '+(top+30)+' l -13 15 v '+Math.min(66,h*.31)+' h 26 v -'+Math.min(66,h*.31)+' l -13 -15'} fill="#ddd7ce" stroke="#a9a49c" strokeWidth="1.3"/></>}
        {kind==='combined'&&<><line x1={bx+9} y1={top+26} x2={bx+sectionW-9} y2={top+26} stroke="#999" strokeWidth="2.7"/><path d={'M '+(bx+sectionW/2)+' '+(top+30)+' l -11 14 v '+Math.min(51,h*.23)+' h 22 v -'+Math.min(51,h*.23)+' l -11 -14'} fill="#e0d8cd" stroke="#aaa29b"/>{[.68,.84].map(p=><rect key={p} x={bx+4} y={top+(h-2*side)*p} width={len} height="3.5" fill={wood} stroke="#aca18e" strokeWidth=".5"/>)}</>}
        {kind==='drawers'&&Array.from({length:drawers},(_,j)=>{
@@ -165,15 +167,22 @@ export default function WardrobeConfigurator({supabase}){
   setConfig(c=>({...c,sections:Array.from({length:n},(_,i)=>c.sections[i]||{kind:'shelves',shelves:4,drawers:3})}));
   setActive(a=>Math.min(a,n-1));
  };
- const editSection=(key,value)=>setConfig(c=>({...c,sections:c.sections.map((sec,i)=>i===active?{...sec,[key]:value}:sec)}));
+ const editSection=(key,value)=>setConfig(c=>({...c,sections:c.sections.map((sec,i)=>i===active?{...sec,[key]:value,...(key==='shelves'||key==='kind'?{shelfPositions:undefined}:{})}:sec)}));
  const section=config.sections[active]||config.sections[0];
- const applySketch=sections=>{
+ const applySketch=(sections,dimensions)=>{
   if(!Array.isArray(sections)||sections.length<2||sections.length>6)return;
-  setConfig(c=>({...c,sections:sections.map(item=>({
-   kind:FILL_OPTIONS.some(x=>x.id===item.kind)?item.kind:'shelves',
-   shelves:clamp(item.shelves??4,2,6),
-   drawers:clamp(item.drawers??3,1,4)
-  }))}));
+  setConfig(c=>({...c,
+   width_cm:clamp(dimensions?.width_cm??c.width_cm,80,300),
+   height_cm:clamp(dimensions?.height_cm??c.height_cm,180,260),
+   depth_cm:clamp(dimensions?.depth_cm??c.depth_cm,40,70),
+   sections:sections.map(item=>{
+    const shelves=clamp(item.shelves??4,2,6);
+    const ratios=Array.isArray(item.shelfPositions)&&item.shelfPositions.length===shelves
+     ?item.shelfPositions.map(p=>Math.max(.05,Math.min(.95,Number(p)||.5))).sort((a,b)=>a-b):undefined;
+    return {kind:FILL_OPTIONS.some(x=>x.id===item.kind)?item.kind:'shelves',
+     shelves,drawers:clamp(item.drawers??3,1,4),...(ratios?{shelfPositions:ratios}:{})};
+   })
+  }));
   setActive(0);
   setDoors(false);
  };
@@ -222,7 +231,7 @@ export default function WardrobeConfigurator({supabase}){
     </div>
    </div>
    <div className="wc-controls">
-    <SketchToWardrobe onApply={applySketch}/>
+    <SketchToWardrobe onApply={applySketch} dimensions={{width_cm:config.width_cm,height_cm:config.height_cm,depth_cm:config.depth_cm}}/>
     <section className="wc-control-card"><div className="wc-section-title"><span>01</span><h2>Габариты шкафа</h2></div>
      <div className="wc-numbers">
       <ConfigNumber label="Ширина" value={config.width_cm} min={80} max={300} onChange={v=>edit('width_cm',v)}/>
