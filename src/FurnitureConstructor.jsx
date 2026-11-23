@@ -28,7 +28,9 @@ const FACADE_STYLES=[
  {id:'frame',name:'Рамочный'},
  {id:'fluted',name:'Вертикальные полосы'},
  {id:'diamond',name:'Ромбы'},
- {id:'glass',name:'Стекло'}
+ {id:'glass',name:'Стекло'},
+ {id:'mixed',name:'Полосы + ромбы'},
+ {id:'glass_frame',name:'Рамка + стекло'}
 ];
 const GLASS_STYLES=[{value:'clear',label:'Прозрачное'},{value:'frosted',label:'Матовое'},{value:'tinted',label:'Тонированное'}];
 const facadeName=id=>FACADE_STYLES.find(s=>s.id===id)?.name||'Гладкий';
@@ -46,7 +48,7 @@ const initialConfig=kind=>{
  const config={version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',
   facade_color:'white',handles:kind==='kitchen'?'gold':'black',
   ...(kind==='kitchen'?{
-   upper_facade_style:'frame',lower_facade_style:'frame',
+   upper_facade_style:'glass_frame',lower_facade_style:'frame',
    upper_glass_type:'clear',lower_glass_type:'clear',
    upper_glass_grid:true,lower_glass_grid:false
   }:{})};
@@ -89,7 +91,7 @@ function KitchenFacadePicker({label,value,onChange,glassType,onGlassType,grid,on
     {value===option.id&&<Check size={14}/>}
    </button>)}
   </div>
-  {value==='glass'&&<div className="fc-facade-glass-options">
+  {(value==='glass'||value==='glass_frame')&&<div className="fc-facade-glass-options">
    <OptionSelect label="Тип стекла" value={glassType} values={GLASS_STYLES} onChange={onGlassType}/>
    <label className="fc-check"><input type="checkbox" checked={grid} onChange={e=>onGrid(e.target.checked)}/>
     <span>Раскладка на стекле (4 секции)</span>
