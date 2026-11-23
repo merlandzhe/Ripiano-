@@ -48,7 +48,7 @@ function buildModel(group,configuration,showDoors,doorView){
  const body=finish(cfg.body_color||'oak');
  const facade=finish(cfg.facade_color||'white');
  const inner=new THREE.MeshStandardMaterial({color:'#ded7cb',roughness:.85});
- const metal=new THREE.MeshStandardMaterial({color:cfg.handles==='silver'?'#a5a6a4':'#393838',roughness:.36,metalness:.52});
+ const metal=new THREE.MeshStandardMaterial({color:cfg.handles==='gold'?'#b59857':cfg.handles==='silver'?'#a5a6a4':'#393838',roughness:cfg.handles==='gold'?.27:.36,metalness:cfg.handles==='gold'?.76:.52});
  const rail=new THREE.MeshStandardMaterial({color:'#aaa7a2',roughness:.39,metalness:.54});
  const materials=[body,facade,inner,metal,rail];
  const piece=(ww,hh,dd,x,y,z,mat=body)=>{

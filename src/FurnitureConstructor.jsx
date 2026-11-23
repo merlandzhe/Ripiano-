@@ -22,7 +22,18 @@ const COLORS=[
  {id:'sand',name:'Кашемир',hex:'#c8bcb0'},
  {id:'graphite',name:'Графит',hex:'#545456'}
 ];
-const HANDLE_OPTIONS=[{id:'black',name:'Чёрные'},{id:'silver',name:'Серебристые'},{id:'hidden',name:'Без ручек'}];
+const HANDLE_OPTIONS=[{id:'black',name:'Чёрные'},{id:'silver',name:'Серебристые'},{id:'gold',name:'Золотые'},{id:'hidden',name:'Без ручек'}];
+const FACADE_STYLES=[
+ {id:'plain',name:'Гладкий'},
+ {id:'frame',name:'Рамочный'},
+ {id:'fluted',name:'Вертикальные полосы'},
+ {id:'diamond',name:'Ромбы'},
+ {id:'glass',name:'Стекло'},
+ {id:'mixed',name:'Полосы + ромбы'},
+ {id:'glass_frame',name:'Рамка + стекло'}
+];
+const GLASS_STYLES=[{value:'clear',label:'Прозрачное'},{value:'frosted',label:'Матовое'},{value:'tinted',label:'Тонированное'}];
+const facadeName=id=>FACADE_STYLES.find(s=>s.id===id)?.name||'Гладкий';
 const SPEC={
  kitchen:{limits:{width_cm:[180,450],height_cm:[215,280],depth_cm:[50,70]},defaults:{width_cm:300,height_cm:240,depth_cm:60,module_count:4,upper_count:4,upper_cabinets:true,countertop:'stone',backsplash:'tile',sink_position:'left',hob_position:'right',sink_cabinet:1,hob_cabinet:4}},
  dresser:{limits:{width_cm:[40,180],height_cm:[50,140],depth_cm:[30,65]},defaults:{width_cm:90,height_cm:85,depth_cm:45,drawer_count:4,leg_style:'plinth'}},
@@ -34,7 +45,13 @@ const material=id=>COLORS.find(c=>c.id===id)?.hex||COLORS[0].hex;
 const nameFor=id=>TYPES.find(t=>t.id===id)?.name||'Шкаф';
 const labelFor=(list,id)=>list.find(t=>t.id===id)?.name||'—';
 const initialConfig=kind=>{
- const config={version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',facade_color:'white',handles:'black'};
+ const config={version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',
+  facade_color:'white',handles:kind==='kitchen'?'gold':'black',
+  ...(kind==='kitchen'?{
+   upper_facade_style:'glass_frame',lower_facade_style:'frame',
+   upper_glass_type:'clear',lower_glass_type:'clear',
+   upper_glass_grid:true,lower_glass_grid:false
+  }:{})};
  if(kind==='kitchen')config.base_modules=kitchenBaseModules(config);
  return config;
 };
@@ -61,6 +78,28 @@ function OptionSelect({label,value,values,onChange}){
  return <label className="wc-select-label">{label}<select value={value} onChange={e=>onChange(e.target.value)}>{values.map(opt=><option key={opt.value} value={opt.value}>{opt.label}</option>)}</select></label>;
 }
 const numberOptions=(from,to,unit)=>Array.from({length:to-from+1},(_,i)=>({value:String(from+i),label:String(from+i)+' '+unit}));
+
+function KitchenFacadePicker({label,value,onChange,glassType,onGlassType,grid,onGrid}){
+ return <fieldset className="fc-facade-group">
+  <legend>{label}</legend>
+  <div className="fc-facade-choices" role="group" aria-label={label}>
+   {FACADE_STYLES.map(option=><button key={option.id} type="button"
+    className={'fc-facade-choice'+(value===option.id?' active':'')}
+    aria-pressed={value===option.id} onClick={()=>onChange(option.id)}>
+    <span className={'fc-facade-mini fc-facade-mini-'+option.id} aria-hidden="true"/>
+    <span>{option.name}</span>
+    {value===option.id&&<Check size={14}/>}
+   </button>)}
+  </div>
+  {(value==='glass'||value==='glass_frame')&&<div className="fc-facade-glass-options">
+   <OptionSelect label="Тип стекла" value={glassType} values={GLASS_STYLES} onChange={onGlassType}/>
+   <label className="fc-check"><input type="checkbox" checked={grid} onChange={e=>onGrid(e.target.checked)}/>
+    <span>Раскладка на стекле (4 секции)</span>
+   </label>
+  </div>}
+ </fieldset>;
+}
+
 
 function FurnitureDrawing({config}){
  const kind=config?.kind||'wardrobe';
@@ -134,7 +173,9 @@ export function FurnitureDetails({config}){
  ...(c.kind==='dresser'?[['Количество ящиков',String(c.drawer_count)],['Основание',c.leg_style==='legs'?'На ножках':'Цоколь']]:[]),
  ...(c.kind==='shelf'?[['Количество секций',String(c.bay_count)],['Полки',String(c.shelf_count)],['Задняя стенка',c.back_panel?'Есть':'Открытый стеллаж']]:[]),
  ...(c.kind==='desk'?[['Основание',c.leg_style==='metal'?'Металлические опоры':'Боковины ЛДСП'],['Ящики',String(c.drawer_count)],['Расположение ящиков',c.drawer_count===0?'Без ящиков':({left:'Слева',right:'Справа',none:'Без тумбы'}[c.drawer_side]||'Справа')]]:[]),
- ...(c.kind==='kitchen'?[['Планировка','Прямая'],['Нижние модули',c.module_count+' шт.'],['Секции с ящиками',kitchenBaseModules(c).map((m,i)=>m.type==='drawers'?(i+1)+' ('+m.drawers+' шт.)':null).filter(Boolean).join(', ')||'Нет'],['Верхние шкафы',c.upper_cabinets===false?'Нет':c.upper_count+' шт.'],['Столешница',({stone:'Камень светлый',graphite:'Камень тёмный',oak:'Под дерево'}[c.countertop]||'Камень светлый')],['Фартук',({tile:'Плитка светлая',dark:'Плитка тёмная',plain:'Гладкий'}[c.backsplash]||'Плитка светлая')],['Мойка','Нижний шкаф №'+(c.sink_cabinet||1)],['Варочная панель','Нижний шкаф №'+(c.hob_cabinet||c.module_count)]]:[])
+ ...(c.kind==='kitchen'?[['Планировка','Прямая'],['Нижние модули',c.module_count+' шт.'],['Секции с ящиками',kitchenBaseModules(c).map((m,i)=>m.type==='drawers'?(i+1)+' ('+m.drawers+' шт.)':null).filter(Boolean).join(', ')||'Нет'],['Верхние шкафы',c.upper_cabinets===false?'Нет':c.upper_count+' шт.'],
+  ['Фасады нижних шкафов',facadeName(c.lower_facade_style)],
+  ['Фасады верхних шкафов',c.upper_cabinets===false?'Нет':facadeName(c.upper_facade_style)],['Столешница',({stone:'Камень светлый',graphite:'Камень тёмный',oak:'Под дерево'}[c.countertop]||'Камень светлый')],['Фартук',({tile:'Плитка светлая',dark:'Плитка тёмная',plain:'Гладкий'}[c.backsplash]||'Плитка светлая')],['Мойка','Нижний шкаф №'+(c.sink_cabinet||1)],['Варочная панель','Нижний шкаф №'+(c.hob_cabinet||c.module_count)]]:[])
  ];
  return <div className="wc-details">{rows.map(([key,val],i)=><div key={i}><b>{key}</b><span>{val}</span></div>)}</div>;
 }
@@ -275,6 +316,19 @@ function CustomFurniture({kind,supabase}){
       <OptionSelect label="Кухонный фартук" value={config.backsplash} values={[{value:'tile',label:'Плитка светлая'},{value:'dark',label:'Плитка тёмная'},{value:'plain',label:'Гладкий'}]} onChange={v=>edit('backsplash',v)}/>
      </>}
     </section>
+    {kind==='kitchen'&&<section className="wc-control-card fc-premium-facades">
+     <div className="wc-section-title"><span>04</span><h2>Стиль фасадов</h2></div>
+     <p className="wc-hint">Выберите оформление отдельно для верхних и нижних дверей. Узоры и стекло отображаются сразу в 3D и на чертеже.</p>
+     <KitchenFacadePicker label="Нижние шкафы" value={config.lower_facade_style||'plain'}
+      onChange={v=>edit('lower_facade_style',v)}
+      glassType={config.lower_glass_type||'clear'} onGlassType={v=>edit('lower_glass_type',v)}
+      grid={config.lower_glass_grid===true} onGrid={v=>edit('lower_glass_grid',v)}/>
+     {config.upper_cabinets!==false&&<KitchenFacadePicker label="Верхние шкафы" value={config.upper_facade_style||'plain'}
+      onChange={v=>edit('upper_facade_style',v)}
+      glassType={config.upper_glass_type||'clear'} onGlassType={v=>edit('upper_glass_type',v)}
+      grid={config.upper_glass_grid===true} onGrid={v=>edit('upper_glass_grid',v)}/>}
+     <p className="wc-hint">Стекло используется в дверцах. Ящики остаются закрытыми, с рамочным фасадом вместо стеклянного.</p>
+    </section>}
    </div>
   </div>
   <section className="wc-quote" id="request">

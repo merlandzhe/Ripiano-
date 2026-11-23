@@ -1,5 +1,6 @@
 import React from 'react';
-import {kitchenBaseModules} from './kitchen-config.js';
+import {kitchenBaseModules,kitchenDoorStyle} from './kitchen-config.js';
+import KitchenFacadeDrawing from './KitchenFacadeDrawing.jsx';
 
 // Customer-facing elevation, not a fabrication drawing.
 export default function KitchenDrawing({config={}}){
@@ -18,7 +19,8 @@ export default function KitchenDrawing({config={}}){
  const body={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'}[config.body_color]||'#c69f72';
  const face={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'}[config.facade_color]||'#f5f2e9';
  const topColor={stone:'#e4ded4',graphite:'#4b4b49',oak:'#c1a079'}[config.countertop]||'#e4ded4';
- const handle=config.handles!=='hidden';
+ const lowerStyle=config.lower_facade_style||'plain';
+ const upperStyle=config.upper_facade_style||'plain';
  const pick=v=>v==='right'?baseCount-1:v==='center'?Math.floor((baseCount-1)/2):0;
  const selected=(value,fallback)=>{
   const index=Math.round(Number(value));
@@ -44,15 +46,13 @@ export default function KitchenDrawing({config={}}){
       Array.from({length:module.drawers},(_,j)=>{
        const rowH=frontH/module.drawers;
        const ry=top+j*rowH;
-       return <g key={'drawer'+j}>
-        <rect x={bx+1.5} y={ry+1} width={bw-3} height={Math.max(2,rowH-2)} fill={face} stroke="#ab9d8d" strokeWidth=".75"/>
-        {handle&&<rect x={bx+bw*.33} y={ry+rowH*.52-1.3} width={bw*.34} height="2.6" rx="1.3" fill="#77736d"/>}
-       </g>;
+       return <KitchenFacadeDrawing key={'drawer'+j} x={bx+1.5} y={ry+1}
+        width={bw-3} height={Math.max(2,rowH-2)}
+        style={kitchenDoorStyle(lowerStyle,i,baseCount)} color={face} handles={config.handles} drawer/>;
       }):
-      <>
-       <rect x={bx+1.5} y={top} width={bw-3} height={frontH} fill={face} stroke="#ab9d8d" strokeWidth=".75"/>
-       {handle&&<rect x={bx+bw-7} y={baseY+6} width="2.5" height={Math.max(8,14*scale)} fill="#77736d" rx="1"/>}
-      </>}
+      <KitchenFacadeDrawing x={bx+1.5} y={top} width={bw-3} height={frontH}
+       style={kitchenDoorStyle(lowerStyle,i,baseCount)} glassType={config.lower_glass_type||'clear'}
+       glassGrid={config.lower_glass_grid===true} color={face} handles={config.handles}/>}
     </g>;
    })}
    <rect x={x+4} y={plinthY} width={w-8} height={10*scale} fill={body} stroke="#b0a395" strokeWidth=".7"/>
@@ -66,8 +66,10 @@ export default function KitchenDrawing({config={}}){
     {Array.from({length:upperCount},(_,i)=>{
      const bx=x+i*w/upperCount,bw=w/upperCount;
      return <g key={'upper'+i}>
-      <rect x={bx+1.2} y={upperY+1.8} width={bw-2.4} height={upperBottom-upperY-3.6} fill={face} stroke="#ac9f90" strokeWidth=".75"/>
-      {handle&&<rect x={bx+bw-7} y={upperBottom-14} width="2.5" height="9" fill="#77736d" rx="1"/>}
+      <KitchenFacadeDrawing x={bx+1.2} y={upperY+1.8}
+       width={bw-2.4} height={upperBottom-upperY-3.6} style={kitchenDoorStyle(upperStyle,i,upperCount)}
+       glassType={config.upper_glass_type||'clear'} glassGrid={config.upper_glass_grid===true}
+       color={face} handles={config.handles}/>
      </g>;
     })}
    </g>}

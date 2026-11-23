@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {kitchenBaseModules} from './kitchen-config.js';
+import {kitchenBaseModules,kitchenDoorStyle} from './kitchen-config.js';
+import {createKitchenFacadePainter} from './kitchen-facades-3d.js';
 
 // Parametric straight kitchen: metric measurements, shared cabinet planes and real cut-out for the sink.
 // Preliminary customer visualization only: final technical drawings and fit must be verified by a cabinet maker.
@@ -43,6 +44,9 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
   const mesh=new THREE.Mesh(new RoundedBoxGeometry(sx,sy,sz,2,radius),material);
   mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);return mesh;
  };
+ const paintFacade=createKitchenFacadePainter({group,piece,addRound,facade,materials});
+ const lowerStyle=cfg.lower_facade_style||'plain';
+ const upperStyle=cfg.upper_facade_style||'plain';
  // A real worktop cut-out instead of placing a black square on a solid slab.
  const workDepth=d+.032;
  const openingW=Math.min(.43,bay*.64);
@@ -96,7 +100,9 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
     const cy=foot+.007+(j+.5)*rowH+j*gap;
     const frontZ=d/2+.012;
     // A single face with a rounded edge for each drawer, fixed flush when closed.
-    addRound(bay-gap,rowH,.018,x,cy,frontZ,facade,.0014);
+    paintFacade({x,y:cy,z:frontZ,width:bay-gap,height:rowH,
+     style:kitchenDoorStyle(lowerStyle,i,n),glass:cfg.lower_glass_type||'clear',
+     grid:cfg.lower_glass_grid===true,drawer:true});
     if(cfg.handles!=='hidden'){
      const pullW=Math.min(.155,trayW*.35);
      addRound(pullW,.012,.013,x,cy,frontZ+.018,metal,.0025);
@@ -123,7 +129,8 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
     }
    }
   }else{
-   addRound(bay-gap,caseH-.013,.018,x,foot+caseH/2,d/2+.012,facade,.0015);
+   paintFacade({x,y:foot+caseH/2,z:d/2+.012,width:bay-gap,height:caseH-.013,
+    style:kitchenDoorStyle(lowerStyle,i,n),glass:cfg.lower_glass_type||'clear',grid:cfg.lower_glass_grid===true});
    if(cfg.handles!=='hidden'){
     const pullX=x+bay*.39;
     addRound(.013,.15,.013,pullX,foot+caseH*.70,d/2+.03,metal,.003);
@@ -183,7 +190,12 @@ export function buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials}
    if(i===0||i===upperN-1)
     piece(t,upperH,upperD,cx+(i===0?-uw/2+t/2:uw/2-t/2),bottomY+upperH/2,upperCenter,body);
    if(i<upperN-1)piece(t,upperH-2*t,upperD-.02,-w/2+(i+1)*uw,bottomY+upperH/2,upperCenter,body);
-   addRound(uw-gap,upperH-.011,.018,cx,bottomY+upperH/2,upperFront,facade,.0015);
+   if(kitchenDoorStyle(upperStyle,i,upperN)==='glass'){
+    // Visible inside upper glazed cabinets, unlike an opaque decorative decal.
+    piece(Math.max(.04,uw-2*t-.008),t,upperD-.035,cx,bottomY+upperH*.48,upperCenter,body);
+   }
+   paintFacade({x:cx,y:bottomY+upperH/2,z:upperFront,width:uw-gap,height:upperH-.011,
+    style:kitchenDoorStyle(upperStyle,i,upperN),glass:cfg.upper_glass_type||'clear',grid:cfg.upper_glass_grid===true});
    if(cfg.handles!=='hidden'){
     const px=cx+uw*.39;
     addRound(.012,.11,.012,px,bottomY+.16,upperFront+.018,metal,.0025);
