@@ -180,11 +180,8 @@ function buildModel(group,configuration,showDoors){
  return {materials,textures,w,h,d};
 }
 function disposeGroup(group){
- const old=[...group.children];
- for(const node of old){
-  group.remove(node);
-  if(node.geometry)node.geometry.dispose();
- }
+ group.traverse(node=>{if(node.geometry)node.geometry.dispose()});
+ group.clear();
 }
 export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
  const canvas=useRef(null),session=useRef(null),fallback=useRef(onFail);
@@ -215,7 +212,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
    const light=new THREE.DirectionalLight('#ffffff',3.0);
    light.position.set(3.2,6,4.1);
    light.castShadow=true;
-   light.shadow.mapSize.set(2048,2048);
+   light.shadow.mapSize.set(window.innerWidth<720?1024:2048,window.innerWidth<720?1024:2048);
    light.shadow.camera.left=-5;light.shadow.camera.right=5;
    light.shadow.camera.top=6;light.shadow.camera.bottom=-6;
    scene.add(light);
