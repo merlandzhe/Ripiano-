@@ -54,3 +54,11 @@
  .sketch-draw-actions{gap:6px}
  .sketch-draw-actions button{min-height:40px}
 }
+
+.wc-preview-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.wc-preview-header{flex-wrap:wrap}
+@media(max-width:680px){
+ .wc-preview-actions{gap:12px}
+ .wc-preview-header>div:first-child{min-width:125px}
+ .wc-preview-header .wc-sketch-open{min-height:40px}
+}
