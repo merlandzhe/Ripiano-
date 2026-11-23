@@ -1,5 +1,5 @@
 import React from 'react';
-import {kitchenBaseModules} from './kitchen-config.js';
+import {kitchenBaseModules,kitchenDoorStyle} from './kitchen-config.js';
 import KitchenFacadeDrawing from './KitchenFacadeDrawing.jsx';
 
 // Customer-facing elevation, not a fabrication drawing.
@@ -48,10 +48,10 @@ export default function KitchenDrawing({config={}}){
        const ry=top+j*rowH;
        return <KitchenFacadeDrawing key={'drawer'+j} x={bx+1.5} y={ry+1}
         width={bw-3} height={Math.max(2,rowH-2)}
-        style={lowerStyle} color={face} handles={config.handles} drawer/>;
+        style={kitchenDoorStyle(lowerStyle,i,baseCount)} color={face} handles={config.handles} drawer/>;
       }):
       <KitchenFacadeDrawing x={bx+1.5} y={top} width={bw-3} height={frontH}
-       style={lowerStyle} glassType={config.lower_glass_type||'clear'}
+       style={kitchenDoorStyle(lowerStyle,i,baseCount)} glassType={config.lower_glass_type||'clear'}
        glassGrid={config.lower_glass_grid===true} color={face} handles={config.handles}/>}
     </g>;
    })}
@@ -67,7 +67,7 @@ export default function KitchenDrawing({config={}}){
      const bx=x+i*w/upperCount,bw=w/upperCount;
      return <g key={'upper'+i}>
       <KitchenFacadeDrawing x={bx+1.2} y={upperY+1.8}
-       width={bw-2.4} height={upperBottom-upperY-3.6} style={upperStyle}
+       width={bw-2.4} height={upperBottom-upperY-3.6} style={kitchenDoorStyle(upperStyle,i,upperCount)}
        glassType={config.upper_glass_type||'clear'} glassGrid={config.upper_glass_grid===true}
        color={face} handles={config.handles}/>
      </g>;
