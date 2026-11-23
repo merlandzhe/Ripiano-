@@ -60,51 +60,66 @@ function buildModel(group,configuration,showDoors){
  };
  const drawerHandle=(x,y,z,length)=>{if(cfg.handles!=='hidden')piece(Math.max(.025,length),.008,.009,x,y,z,metal)};
  if(kind==='wardrobe'){
-  piece(t,h,d,-w/2+t/2,h/2,0);
-  piece(t,h,d,w/2-t/2,h/2,0);
-  piece(w,t,d,0,t/2,0);
-  piece(w,t,d,0,h-t/2,0);
-  piece(w,h,.008,0,h/2,-d/2+.004,inner);
-  const sections=Array.isArray(cfg.sections)&&cfg.sections.length?cfg.sections:[{kind:'shelves'},{kind:'rail'}];
+  // Shared coordinate system: every door is flush with the same front plane.
+  const plinth=.075,gap=.0025,margin=.002,frontZ=d/2+.002,faceDepth=.018;
+  const usableWidth=w-2*t,innerHeight=h-plinth-2*t;
+  const sections=Array.isArray(cfg.sections)&&cfg.sections.length?cfg.sections:[{kind:'shelves',shelves:4},{kind:'rail'}];
   const count=Math.min(6,Math.max(2,sections.length));
-  const sw=(w-t*2)/count;
-  for(let s=0;s<count;s++){
-   const sec=sections[s]||{kind:'shelves'};
-   const left=-w/2+t+s*sw;
-   if(s<count-1)piece(t,h-t*2,d-t,left+sw-t/2,h/2,0);
-   const usable=Math.max(.08,sw-t*1.4);
-   const cx=left+sw/2,innerZ=-.013;
+  const bay=usableWidth/count;
+  const faceWidth=w-2*margin;
+  const doorWidth=(faceWidth-(count-1)*gap)/count;
+  const faceHeight=h-plinth-.006;
+  // Recessed plinth and one continuous rectangular carcass.
+  piece(w-.05,plinth,.04,0,plinth/2,d/2-.055);
+  piece(t,h-plinth,d,-w/2+t/2,plinth+(h-plinth)/2,0);
+  piece(t,h-plinth,d,w/2-t/2,plinth+(h-plinth)/2,0);
+  piece(w-2*t,t,d,0,plinth+t/2,0);
+  piece(w-2*t,t,d,0,h-t/2,0);
+  piece(w-2*t,innerHeight,.006,0,plinth+t+innerHeight/2,-d/2+.008,inner);
+  for(let i=0;i<count;i++){
+   const sec=sections[i]||{kind:'shelves',shelves:4};
+   const x0=-w/2+t+i*bay,cx=x0+bay/2;
+   const shelfWidth=Math.max(.09,bay-t-.004);
+   if(i<count-1)piece(t,innerHeight,d-.045,x0+bay,plinth+t+innerHeight/2,-.012);
    if(sec.kind==='shelves'||sec.kind==='combined'){
-    const shelves=sec.kind==='combined'?2:bound(sec.shelves,2,6,4);
-    for(let j=1;j<=shelves;j++)piece(usable,t,d-t*1.4,cx,(j/(shelves+1))*(h-t*2)+t,innerZ,body);
+    const n=sec.kind==='combined'?2:Math.round(bound(sec.shelves,2,6,4));
+    for(let j=1;j<=n;j++)
+     piece(shelfWidth,t,d-.065,cx,plinth+t+innerHeight*j/(n+1),-.012);
    }
    if(sec.kind==='rail'||sec.kind==='combined'){
-    const y=h-(sec.kind==='combined'?.12:.18);
-    bar(usable*.85,cx,y,d*.17);
-    // A few simplified hangers make the rod recognizable in the open interior.
-    for(let a=0;a<Math.min(3,Math.floor(usable/.13));a++){
-     const hx=cx+(a-1)*Math.min(.1,usable/4);
-     bar(.04,hx,y-.065,d*.14,rail);
-    }
+    const rod=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,Math.max(.05,shelfWidth-.05),12),rail);
+    rod.rotation.z=Math.PI/2;
+    rod.position.set(cx,h-(sec.kind==='combined'?.32:.20),-.035);
+    rod.castShadow=true;group.add(rod);
    }
    if(sec.kind==='drawers'){
-    const n=Math.round(bound(sec.drawers,1,4,3));
-    const dh=Math.min(.24,Math.max(.10,(h*.55)/n));
+    const n=Math.round(bound(sec.drawers,1,4,3)),rowH=Math.min(.22,innerHeight*.53/n);
     for(let j=0;j<n;j++){
-     const cy=t+.04+dh*(j+.5);
-     piece(usable,dh-.012,.019,cx,cy,d/2-.015,facade);
-     drawerHandle(cx,cy,d/2+.0005,Math.min(.09,usable*.25));
+     const y=plinth+t+.045+rowH*(j+.5);
+     piece(shelfWidth-.012,rowH-.01,.018,cx,y,d/2-.045,facade);
+     if(cfg.handles!=='hidden')piece(Math.min(.13,shelfWidth*.24),.008,.008,cx,y,d/2-.031,metal);
     }
    }
   }
-  if(showDoors){
-   const doorW=w/count;
-   for(let i=0;i<count;i++){
-    const x=-w/2+(i+.5)*doorW;
-    piece(doorW-.006,h-.013,t,x,h/2,d/2+t/2,facade);
-    if(cfg.handles!=='hidden'){
-     const handleX=x+doorW*.37;
-     piece(.010,Math.min(.17,h*.16),.012,handleX,h*.52,d/2+t+.008,metal);
+  // Identical facades with a 2.5 mm joint. Opening rotates the complete door + handle.
+  for(let i=0;i<count;i++){
+   const x=-w/2+margin+i*(doorWidth+gap)+doorWidth/2;
+   const left=i%2===0;
+   const pivot=new THREE.Group();
+   pivot.position.set(x+(left?-doorWidth/2:doorWidth/2),0,frontZ+faceDepth/2);
+   pivot.rotation.y=showDoors?0:(left?-.92:.92);
+   group.add(pivot);
+   const face=new THREE.Mesh(new RoundedBoxGeometry(doorWidth,faceHeight,faceDepth,2,.0011),facade);
+   face.position.set(left?doorWidth/2:-doorWidth/2,plinth+.003+faceHeight/2,0);
+   face.castShadow=true;face.receiveShadow=true;pivot.add(face);
+   if(cfg.handles!=='hidden'){
+    const hx=left?doorWidth-.045:-doorWidth+.045;
+    const hy=plinth+faceHeight*.54;
+    const pull=new THREE.Mesh(new RoundedBoxGeometry(.012,Math.min(.22,faceHeight*.17),.012,2,.002),metal);
+    pull.position.set(hx,hy,faceDepth/2+.012);pull.castShadow=true;pivot.add(pull);
+    for(const dy of [-.062,.062]){
+     const mount=new THREE.Mesh(new THREE.BoxGeometry(.006,.008,.013),metal);
+     mount.position.set(hx,hy+dy,faceDepth/2+.005);pivot.add(mount);
     }
    }
   }
