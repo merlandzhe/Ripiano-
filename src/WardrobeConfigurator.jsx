@@ -1,11 +1,10 @@
 
 import React,{useEffect,useState} from 'react';
-import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send,Pencil} from 'lucide-react';
+import {ArrowRight,ArrowLeft,Check,RotateCcw,Ruler,Layers,Send} from 'lucide-react';
 import './wardrobe-configurator.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
-import SketchToWardrobe from './SketchToWardrobe.jsx';
 
 const COLOR_OPTIONS=[
  {id:'white',name:'Белый',hex:'#f6f3ed'},
@@ -169,23 +168,6 @@ export default function WardrobeConfigurator({supabase}){
  };
  const editSection=(key,value)=>setConfig(c=>({...c,sections:c.sections.map((sec,i)=>i===active?{...sec,[key]:value,...(key==='shelves'||key==='kind'?{shelfPositions:undefined}:{})}:sec)}));
  const section=config.sections[active]||config.sections[0];
- const applySketch=(sections,dimensions)=>{
-  if(!Array.isArray(sections)||sections.length<2||sections.length>6)return;
-  setConfig(c=>({...c,
-   width_cm:Number(dimensions?.width_cm)>0?clamp(dimensions.width_cm,80,300):c.width_cm,
-   height_cm:Number(dimensions?.height_cm)>0?clamp(dimensions.height_cm,180,260):c.height_cm,
-   depth_cm:Number(dimensions?.depth_cm)>0?clamp(dimensions.depth_cm,40,70):c.depth_cm,
-   sections:sections.map(item=>{
-    const shelves=clamp(item.shelves??4,2,6);
-    const ratios=Array.isArray(item.shelfPositions)&&item.shelfPositions.length===shelves
-     ?item.shelfPositions.map(p=>Math.max(.05,Math.min(.95,Number(p)||.5))).sort((a,b)=>a-b):undefined;
-    return {kind:FILL_OPTIONS.some(x=>x.id===item.kind)?item.kind:'shelves',
-     shelves,drawers:clamp(item.drawers??3,1,4),...(ratios?{shelfPositions:ratios}:{})};
-   })
-  }));
-  setActive(0);
-  setDoors(false);
- };
  async function submit(e){
   e.preventDefault();
   if(sending||submitted)return;
@@ -213,13 +195,10 @@ export default function WardrobeConfigurator({supabase}){
   <div className="wc-page-heading"><div><div className="wc-eyebrow">RIPIANO / КОНСТРУКТОР 01</div><h1>СОЗДАЙТЕ<br/>СВОЙ ШКАФ</h1></div><p>Выберите размеры, наполнение и отделку. Мы получим эскиз вашего проекта и рассчитаем стоимость изготовления.</p></div>
   <div className="wc-workspace">
    <div className="wc-preview-column">
-    <div className="wc-preview-card" id="ripiano-wardrobe-view">
+    <div className="wc-preview-card">
      <div className="wc-preview-header"><div><span className="wc-eyebrow">ЭСКИЗ ПРОЕКТА</span><b>Шкаф на заказ</b></div>
-       <div className="wc-preview-actions">
-        <button type="button" className="wc-sketch-open" onClick={()=>document.getElementById('ripiano-sketch')?.scrollIntoView({behavior:'smooth',block:'start'})}><Pencil size={15}/> По рисунку</button>
-        <button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button>
-       </div>
-      </div>
+      <button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button>
+     </div>
      <FurniturePreviewSwitch config={config} doors={doors} doorView={doorView} twoD={<WardrobePreview config={config} doors={doors}/>}/>
      <div className="wc-preview-toggle wc-preview-toggle-three" role="group" aria-label="Положение дверей">
        <button type="button" className={doorView==='closed'?'active':''} aria-pressed={doorView==='closed'} onClick={()=>setDoorView('closed')}>Закрыты</button>
@@ -231,7 +210,6 @@ export default function WardrobeConfigurator({supabase}){
     </div>
    </div>
    <div className="wc-controls">
-    <SketchToWardrobe onApply={applySketch} dimensions={{width_cm:config.width_cm,height_cm:config.height_cm,depth_cm:config.depth_cm}}/>
     <section className="wc-control-card"><div className="wc-section-title"><span>01</span><h2>Габариты шкафа</h2></div>
      <div className="wc-numbers">
       <ConfigNumber label="Ширина" value={config.width_cm} min={80} max={300} onChange={v=>edit('width_cm',v)}/>
