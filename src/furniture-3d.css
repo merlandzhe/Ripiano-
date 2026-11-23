@@ -18,3 +18,21 @@
  .ripiano-view-actions{margin-bottom:10px}
  .ripiano-view-actions span{font-size:10px}
 }
+
+
+/* 2026 wardrobe preview refinement: keep a focused, spacious, mobile-first work area. */
+.ripiano-preview-panel{margin-top:12px}
+.ripiano-3d-canvas{height:430px;background:radial-gradient(ellipse at 60% 36%,#f8f6f1 0%,#e7e3dc 77%);border:1px solid #d8d2c9;border-radius:12px;user-select:none}
+.ripiano-view-tabs{border-radius:10px;margin:6px auto 14px;background:#dcd5cb}
+.ripiano-view-tabs button{border-radius:7px;min-height:43px;font-size:12px}
+.ripiano-view-tabs button:focus-visible,.ripiano-view-actions button:focus-visible{outline:2px solid #6f5f4b;outline-offset:3px}
+.ripiano-view-actions{padding:6px 3px 0}
+.ripiano-view-actions button{font-weight:650;min-height:36px;padding:8px}
+.ripiano-viewer-loading{height:430px;border-radius:12px;background:#eeebe5}
+@media(max-width:680px){
+ .ripiano-3d-canvas,.ripiano-viewer-loading{height:340px}
+ .ripiano-view-tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}
+ .ripiano-view-tabs button{min-width:0;min-height:44px}
+ .ripiano-view-actions span{font-size:11px}
+}
+@media(max-width:370px){.ripiano-3d-canvas,.ripiano-viewer-loading{height:305px}}

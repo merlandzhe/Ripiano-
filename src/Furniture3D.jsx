@@ -2,11 +2,31 @@
 import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import './furniture-3d.css';
 
 const FINISH={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'};
 const bound=(v,min,max,fallback)=>Number.isFinite(Number(v))?Math.max(min,Math.min(max,Number(v))):fallback;
 const meter=n=>n/100;
+
+function woodGrain(hex){
+ const canvas=document.createElement('canvas');
+ canvas.width=256;canvas.height=512;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle=hex;ctx.fillRect(0,0,256,512);
+ let seed=217;
+ const random=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+ for(let i=0;i<360;i++){
+  const x=random()*256,shift=(random()-.5)*24,alpha=.018+random()*.085;
+  ctx.strokeStyle=random()>.5?'rgba(60,35,15,'+alpha+')':'rgba(255,246,226,'+alpha+')';
+  ctx.lineWidth=.35+random()*2.6;
+  ctx.beginPath();ctx.moveTo(x,0);
+  ctx.bezierCurveTo(x+shift,140,x-shift,330,x+shift*.3,512);
+  ctx.stroke();
+ }
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ return tex;
+}
 
 function buildModel(group,configuration,showDoors){
  const cfg=configuration||{};
@@ -15,9 +35,18 @@ function buildModel(group,configuration,showDoors){
  const h=meter(bound(cfg.height_cm,50,260,220));
  const d=meter(bound(cfg.depth_cm,20,100,55));
  const t=Math.min(.018,d*.065);
- const body=new THREE.MeshStandardMaterial({color:FINISH[cfg.body_color]||FINISH.oak,roughness:.77});
- const facade=new THREE.MeshStandardMaterial({color:FINISH[cfg.facade_color]||FINISH.white,roughness:.72});
- const inner=new THREE.MeshStandardMaterial({color:'#e8dfd2',roughness:.84});
+ const textures=[];
+ const finish=id=>{
+  const color=FINISH[id]||FINISH.oak;
+  if(id==='oak'||id==='sand'){
+   const tex=woodGrain(color);textures.push(tex);
+   return new THREE.MeshStandardMaterial({color:'#ffffff',map:tex,roughness:.75});
+  }
+  return new THREE.MeshStandardMaterial({color,roughness:.68});
+ };
+ const body=finish(cfg.body_color||'oak');
+ const facade=finish(cfg.facade_color||'white');
+ const inner=new THREE.MeshStandardMaterial({color:'#ded7cb',roughness:.85});
  const metal=new THREE.MeshStandardMaterial({color:cfg.handles==='silver'?'#a5a6a4':'#393838',roughness:.36,metalness:.52});
  const rail=new THREE.MeshStandardMaterial({color:'#aaa7a2',roughness:.39,metalness:.54});
  const materials=[body,facade,inner,metal,rail];
@@ -31,51 +60,66 @@ function buildModel(group,configuration,showDoors){
  };
  const drawerHandle=(x,y,z,length)=>{if(cfg.handles!=='hidden')piece(Math.max(.025,length),.008,.009,x,y,z,metal)};
  if(kind==='wardrobe'){
-  piece(t,h,d,-w/2+t/2,h/2,0);
-  piece(t,h,d,w/2-t/2,h/2,0);
-  piece(w,t,d,0,t/2,0);
-  piece(w,t,d,0,h-t/2,0);
-  piece(w,h,.008,0,h/2,-d/2+.004,inner);
-  const sections=Array.isArray(cfg.sections)&&cfg.sections.length?cfg.sections:[{kind:'shelves'},{kind:'rail'}];
+  // Shared coordinate system: every door is flush with the same front plane.
+  const plinth=.075,gap=.0025,margin=.002,frontZ=d/2+.002,faceDepth=.018;
+  const usableWidth=w-2*t,innerHeight=h-plinth-2*t;
+  const sections=Array.isArray(cfg.sections)&&cfg.sections.length?cfg.sections:[{kind:'shelves',shelves:4},{kind:'rail'}];
   const count=Math.min(6,Math.max(2,sections.length));
-  const sw=(w-t*2)/count;
-  for(let s=0;s<count;s++){
-   const sec=sections[s]||{kind:'shelves'};
-   const left=-w/2+t+s*sw;
-   if(s<count-1)piece(t,h-t*2,d-t,left+sw-t/2,h/2,0);
-   const usable=Math.max(.08,sw-t*1.4);
-   const cx=left+sw/2,innerZ=-.013;
+  const bay=usableWidth/count;
+  const faceWidth=w-2*margin;
+  const doorWidth=(faceWidth-(count-1)*gap)/count;
+  const faceHeight=h-plinth-.006;
+  // Recessed plinth and one continuous rectangular carcass.
+  piece(w-.05,plinth,.04,0,plinth/2,d/2-.055);
+  piece(t,h-plinth,d,-w/2+t/2,plinth+(h-plinth)/2,0);
+  piece(t,h-plinth,d,w/2-t/2,plinth+(h-plinth)/2,0);
+  piece(w-2*t,t,d,0,plinth+t/2,0);
+  piece(w-2*t,t,d,0,h-t/2,0);
+  piece(w-2*t,innerHeight,.006,0,plinth+t+innerHeight/2,-d/2+.008,inner);
+  for(let i=0;i<count;i++){
+   const sec=sections[i]||{kind:'shelves',shelves:4};
+   const x0=-w/2+t+i*bay,cx=x0+bay/2;
+   const shelfWidth=Math.max(.09,bay-t-.004);
+   if(i<count-1)piece(t,innerHeight,d-.045,x0+bay,plinth+t+innerHeight/2,-.012);
    if(sec.kind==='shelves'||sec.kind==='combined'){
-    const shelves=sec.kind==='combined'?2:bound(sec.shelves,2,6,4);
-    for(let j=1;j<=shelves;j++)piece(usable,t,d-t*1.4,cx,(j/(shelves+1))*(h-t*2)+t,innerZ,body);
+    const n=sec.kind==='combined'?2:Math.round(bound(sec.shelves,2,6,4));
+    for(let j=1;j<=n;j++)
+     piece(shelfWidth,t,d-.065,cx,plinth+t+innerHeight*j/(n+1),-.012);
    }
    if(sec.kind==='rail'||sec.kind==='combined'){
-    const y=h-(sec.kind==='combined'?.12:.18);
-    bar(usable*.85,cx,y,d*.17);
-    // A few simplified hangers make the rod recognizable in the open interior.
-    for(let a=0;a<Math.min(3,Math.floor(usable/.13));a++){
-     const hx=cx+(a-1)*Math.min(.1,usable/4);
-     bar(.04,hx,y-.065,d*.14,rail);
-    }
+    const rod=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,Math.max(.05,shelfWidth-.05),12),rail);
+    rod.rotation.z=Math.PI/2;
+    rod.position.set(cx,h-(sec.kind==='combined'?.32:.20),-.035);
+    rod.castShadow=true;group.add(rod);
    }
    if(sec.kind==='drawers'){
-    const n=Math.round(bound(sec.drawers,1,4,3));
-    const dh=Math.min(.24,Math.max(.10,(h*.55)/n));
+    const n=Math.round(bound(sec.drawers,1,4,3)),rowH=Math.min(.22,innerHeight*.53/n);
     for(let j=0;j<n;j++){
-     const cy=t+.04+dh*(j+.5);
-     piece(usable,dh-.012,.019,cx,cy,d/2-.015,facade);
-     drawerHandle(cx,cy,d/2+.0005,Math.min(.09,usable*.25));
+     const y=plinth+t+.045+rowH*(j+.5);
+     piece(shelfWidth-.012,rowH-.01,.018,cx,y,d/2-.045,facade);
+     if(cfg.handles!=='hidden')piece(Math.min(.13,shelfWidth*.24),.008,.008,cx,y,d/2-.031,metal);
     }
    }
   }
-  if(showDoors){
-   const doorW=w/count;
-   for(let i=0;i<count;i++){
-    const x=-w/2+(i+.5)*doorW;
-    piece(doorW-.006,h-.013,t,x,h/2,d/2+t/2,facade);
-    if(cfg.handles!=='hidden'){
-     const handleX=x+doorW*.37;
-     piece(.010,Math.min(.17,h*.16),.012,handleX,h*.52,d/2+t+.008,metal);
+  // Identical facades with a 2.5 mm joint. Opening rotates the complete door + handle.
+  for(let i=0;i<count;i++){
+   const x=-w/2+margin+i*(doorWidth+gap)+doorWidth/2;
+   const left=i%2===0;
+   const pivot=new THREE.Group();
+   pivot.position.set(x+(left?-doorWidth/2:doorWidth/2),0,frontZ+faceDepth/2);
+   pivot.rotation.y=showDoors?0:(left?-.92:.92);
+   group.add(pivot);
+   const face=new THREE.Mesh(new RoundedBoxGeometry(doorWidth,faceHeight,faceDepth,2,.0011),facade);
+   face.position.set(left?doorWidth/2:-doorWidth/2,plinth+.003+faceHeight/2,0);
+   face.castShadow=true;face.receiveShadow=true;pivot.add(face);
+   if(cfg.handles!=='hidden'){
+    const hx=left?doorWidth-.045:-doorWidth+.045;
+    const hy=plinth+faceHeight*.54;
+    const pull=new THREE.Mesh(new RoundedBoxGeometry(.012,Math.min(.22,faceHeight*.17),.012,2,.002),metal);
+    pull.position.set(hx,hy,faceDepth/2+.012);pull.castShadow=true;pivot.add(pull);
+    for(const dy of [-.062,.062]){
+     const mount=new THREE.Mesh(new THREE.BoxGeometry(.006,.008,.013),metal);
+     mount.position.set(hx,hy+dy,faceDepth/2+.005);pivot.add(mount);
     }
    }
   }
@@ -133,14 +177,11 @@ function buildModel(group,configuration,showDoors){
    }
   }
  }
- return {materials,w,h,d};
+ return {materials,textures,w,h,d};
 }
 function disposeGroup(group){
- const old=[...group.children];
- for(const node of old){
-  group.remove(node);
-  if(node.geometry)node.geometry.dispose();
- }
+ group.traverse(node=>{if(node.geometry)node.geometry.dispose()});
+ group.clear();
 }
 export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
  const canvas=useRef(null),session=useRef(null),fallback=useRef(onFail);
@@ -160,22 +201,22 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
   try{
    renderer=new THREE.WebGLRenderer({canvas:holder,alpha:true,antialias:true,powerPreference:'low-power'});
    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
-   renderer.setClearColor('#eeebe5',1);
+   renderer.setClearColor('#ebe8e1',1);
    renderer.shadowMap.enabled=true;
    renderer.shadowMap.type=THREE.PCFShadowMap;
    renderer.outputColorSpace=THREE.SRGBColorSpace;
    scene=new THREE.Scene();
    camera=new THREE.PerspectiveCamera(37,1,.05,90);
    scene.add(group);
-   scene.add(new THREE.HemisphereLight('#ffffff','#b1a394',2.1));
-   const light=new THREE.DirectionalLight('#ffffff',2.8);
+   scene.add(new THREE.HemisphereLight('#ffffff','#a7a09a',1.5));
+   const light=new THREE.DirectionalLight('#ffffff',3.0);
    light.position.set(3.2,6,4.1);
    light.castShadow=true;
-   light.shadow.mapSize.set(1024,1024);
+   light.shadow.mapSize.set(window.innerWidth<720?1024:2048,window.innerWidth<720?1024:2048);
    light.shadow.camera.left=-5;light.shadow.camera.right=5;
    light.shadow.camera.top=6;light.shadow.camera.bottom=-6;
    scene.add(light);
-   const ground=new THREE.Mesh(new THREE.PlaneGeometry(24,24),new THREE.ShadowMaterial({opacity:.13}));
+   const ground=new THREE.Mesh(new THREE.PlaneGeometry(24,24),new THREE.ShadowMaterial({opacity:.20}));
    ground.rotation.x=-Math.PI/2;
    ground.position.y=-.015;
    ground.receiveShadow=true;
@@ -202,7 +243,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
    observer.observe(holder);
    const handleLoss=e=>{e.preventDefault();fallback.current?.()};
    holder.addEventListener('webglcontextlost',handleLoss,false);
-   session.current={group,renderer,camera,controls,schedule,materials:[],lastFit:null,fit:null};
+   session.current={group,renderer,camera,controls,schedule,materials:[],textures:[],lastFit:null,fit:null};
    const fit=(w,h,d)=>{
     const radius=Math.max(w,h,d);
     const factor=Math.max(radius/(2*Math.tan(37*Math.PI/360))*1.28,1.8);
@@ -227,6 +268,7 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
     ground.geometry.dispose();ground.material.dispose();
     const previous=last?.materials||[];
     for(const m of previous)m.dispose();
+    for(const texture of last?.textures||[])texture.dispose();
     renderer.dispose();
    };
   }catch(e){
@@ -241,8 +283,10 @@ export default function Furniture3D({config,showDoors=false,resetKey=0,onFail}){
   if(!live)return;
   disposeGroup(live.group);
   for(const m of live.materials)m.dispose();
+  for(const texture of live.textures||[])texture.dispose();
   const result=buildModel(live.group,config,showDoors);
   live.materials=result.materials;
+  live.textures=result.textures;
   const fitKey=[config?.kind||'wardrobe',result.w,result.h,result.d].join('|');
   if(live.lastFit!==fitKey){live.lastFit=fitKey;live.fit?.(result.w,result.h,result.d);}
   live.schedule();
