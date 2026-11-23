@@ -172,9 +172,9 @@ export default function WardrobeConfigurator({supabase}){
  const applySketch=(sections,dimensions)=>{
   if(!Array.isArray(sections)||sections.length<2||sections.length>6)return;
   setConfig(c=>({...c,
-   width_cm:clamp(dimensions?.width_cm??c.width_cm,80,300),
-   height_cm:clamp(dimensions?.height_cm??c.height_cm,180,260),
-   depth_cm:clamp(dimensions?.depth_cm??c.depth_cm,40,70),
+   width_cm:Number(dimensions?.width_cm)>0?clamp(dimensions.width_cm,80,300):c.width_cm,
+   height_cm:Number(dimensions?.height_cm)>0?clamp(dimensions.height_cm,180,260):c.height_cm,
+   depth_cm:Number(dimensions?.depth_cm)>0?clamp(dimensions.depth_cm,40,70):c.depth_cm,
    sections:sections.map(item=>{
     const shelves=clamp(item.shelves??4,2,6);
     const ratios=Array.isArray(item.shelfPositions)&&item.shelfPositions.length===shelves
