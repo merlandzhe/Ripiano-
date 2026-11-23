@@ -137,6 +137,15 @@ export default function SketchToWardrobe({onApply,dimensions}){
   const n=Math.max(2,Math.min(6,Number(count)||2));
   return {...prev,sections:Array.from({length:n},(_,i)=>prev.sections[i]||{kind:'shelves',shelves:4,drawers:3})};
  });
+ const switchToManual=()=>{
+  setResult({
+   ok:true,confidence:'manual',
+   sections:[{kind:'shelves',shelves:4,drawers:3},{kind:'rail',shelves:4,drawers:3}],
+   guides:{verticals:[],horizontals:[]},
+   bounds:{left:0,top:0,right:WIDTH,bottom:HEIGHT},
+   message:'Автоматически прочитать чертёж не удалось. Задайте секции и габариты вручную ниже.'
+  });
+ };
  const apply=()=>{
   if(!result?.ok)return;
   onApply(result.sections,measurements);
@@ -165,7 +174,7 @@ export default function SketchToWardrobe({onApply,dimensions}){
    </label>
    {photo&&<div className="sketch-image-stage">
      <img src={photo} alt="Загруженный рисунок шкафа" />
-     {result?.ok&&<svg className="sketch-guide" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+     {result?.ok&&result.confidence!=='manual'&&<svg className="sketch-guide" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
        <rect x={result.bounds.left} y={result.bounds.top} width={result.bounds.right-result.bounds.left} height={result.bounds.bottom-result.bounds.top} fill="none" stroke="#b07942" strokeWidth="3" strokeDasharray="8 7"/>
        {result.guides.verticals.map((x,i)=><line key={i} x1={x} x2={x} y1={result.bounds.top} y2={result.bounds.bottom} stroke="#b07942" strokeWidth="3" strokeDasharray="7 6"/>)}
        {result.guides.horizontals.map((ys,i)=>{
@@ -230,7 +239,8 @@ export default function SketchToWardrobe({onApply,dimensions}){
      <p className="sketch-review-note">Проверьте размеры и наполнение: результат предварительный. Неправильно распознанные полки можно изменить здесь или после построения.</p>
     </div>
     <button type="button" className="sketch-apply" onClick={apply}>Построить 3D по рисунку <Check size={17}/></button>
-   </>:<><h3><AlertCircle size={18}/> Нужна более простая схема</h3><p>{result.message}</p></>}
+   </>:<><h3><AlertCircle size={18}/> Не удалось распознать автоматически</h3><p>{result.message}</p>
+     <button type="button" className="sketch-manual" onClick={switchToManual}>Задать секции вручную</button></>}
   </div>}
   <p className="sketch-footnote">Это предварительная реконструкция, не готовый чертёж для производства. Фото остаётся в браузере и не отправляется на сервер.</p>
  </section>;
