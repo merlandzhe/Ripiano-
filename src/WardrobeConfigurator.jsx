@@ -148,7 +148,9 @@ export default function WardrobeConfigurator({supabase}){
   return ()=>window.clearTimeout(timer);
  },[config]);
  const [active,setActive]=useState(0);
- const [doors,setDoors]=useState(true);
+ const [doorView,setDoorView]=useState('closed');
+ const doors=doorView==='closed';
+ const setDoors=value=>setDoorView(value?'closed':'interior');
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
  const [note,setNote]=useState('');
@@ -209,12 +211,13 @@ export default function WardrobeConfigurator({supabase}){
         <button className="wc-reset" type="button" onClick={()=>{setConfig(initialConfig());setActive(0);setDoors(true)}}><RotateCcw size={15}/> Сбросить</button>
        </div>
       </div>
-     <FurniturePreviewSwitch config={config} doors={doors} twoD={<WardrobePreview config={config} doors={doors}/>}/>
-     <div className="wc-preview-toggle" role="group" aria-label="Положение дверей">
-       <button type="button" className={doors?'active':''} aria-pressed={doors} onClick={()=>setDoors(true)}>Двери закрыты</button>
-       <button type="button" className={!doors?'active':''} aria-pressed={!doors} onClick={()=>setDoors(false)}>Открыть двери</button>
+     <FurniturePreviewSwitch config={config} doors={doors} doorView={doorView} twoD={<WardrobePreview config={config} doors={doors}/>}/>
+     <div className="wc-preview-toggle wc-preview-toggle-three" role="group" aria-label="Положение дверей">
+       <button type="button" className={doorView==='closed'?'active':''} aria-pressed={doorView==='closed'} onClick={()=>setDoorView('closed')}>Закрыты</button>
+       <button type="button" className={doorView==='open'?'active':''} aria-pressed={doorView==='open'} onClick={()=>setDoorView('open')}>Распахнуты</button>
+       <button type="button" className={doorView==='interior'?'active':''} aria-pressed={doorView==='interior'} onClick={()=>setDoorView('interior')}>Без дверей</button>
       </div>
-      <p className="wc-draft-hint" role="status">Размеры и материалы автоматически сохраняются на этом устройстве.</p>
+      <p className="wc-draft-hint" role="status">{doorView==='interior'?'Всё внутреннее наполнение видно — фасады временно скрыты.':doorView==='open'?'Двери распахнуты наружу на 112°.':'Размеры и материалы автоматически сохраняются на этом устройстве.'}</p>
      <div className="wc-preview-note"><Ruler size={16}/><span>Схема для предварительного расчёта. Точные размеры деталей и конструкцию согласует мебельщик.</span></div>
     </div>
    </div>

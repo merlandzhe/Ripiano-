@@ -3,7 +3,7 @@ import React,{lazy,Suspense,useState} from 'react';
 import './furniture-3d.css';
 
 const Furniture3D=lazy(()=>import('./Furniture3D.jsx'));
-export default function FurniturePreviewSwitch({config,doors=false,twoD}){
+export default function FurniturePreviewSwitch({config,doors=false,doorView,twoD}){
  const [mode,setMode]=useState('3d');
  const [resetKey,setResetKey]=useState(0);
  const [unsupported,setUnsupported]=useState(false);
@@ -13,7 +13,7 @@ export default function FurniturePreviewSwitch({config,doors=false,twoD}){
    <button type="button" className={mode==='2d'?'active':''} aria-pressed={mode==='2d'} onClick={()=>setMode('2d')}>2D · чертёж</button>
   </div>
   {mode==='3d'?<Suspense fallback={<div className="ripiano-viewer-loading">Загружаем 3D-просмотр…</div>}>
-    <Furniture3D config={config} showDoors={doors} resetKey={resetKey} onFail={()=>{setUnsupported(true);setMode('2d')}}/>
+    <Furniture3D config={config} showDoors={doors} doorView={doorView} resetKey={resetKey} onFail={()=>{setUnsupported(true);setMode('2d')}}/>
   </Suspense>:twoD}
   <div className="ripiano-view-actions">
    <span>{mode==='3d'?'Проведите пальцем для вращения · двумя пальцами для масштаба':'Схема с размерами для расчёта'}</span>
