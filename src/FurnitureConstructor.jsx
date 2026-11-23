@@ -4,6 +4,7 @@ import {ArrowLeft,ArrowRight,Check,RotateCcw,Ruler} from 'lucide-react';
 import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 import KitchenDrawing from './KitchenDrawing.jsx';
+import {kitchenBaseModules} from './kitchen-config.js';
 import './furniture-constructor.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
@@ -32,7 +33,11 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,Math.round(Number(v)||a)));
 const material=id=>COLORS.find(c=>c.id===id)?.hex||COLORS[0].hex;
 const nameFor=id=>TYPES.find(t=>t.id===id)?.name||'Шкаф';
 const labelFor=(list,id)=>list.find(t=>t.id===id)?.name||'—';
-const initialConfig=kind=>({version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',facade_color:'white',handles:'black'});
+const initialConfig=kind=>{
+ const config={version:2,kind,...SPEC[kind].defaults,body_color:kind==='kitchen'?'sand':'oak',facade_color:'white',handles:'black'};
+ if(kind==='kitchen')config.base_modules=kitchenBaseModules(config);
+ return config;
+};
 
 function DimensionField({label,value,min,max,onChange}){
  const [draft,setDraft]=useState(String(value));
@@ -129,13 +134,14 @@ export function FurnitureDetails({config}){
  ...(c.kind==='dresser'?[['Количество ящиков',String(c.drawer_count)],['Основание',c.leg_style==='legs'?'На ножках':'Цоколь']]:[]),
  ...(c.kind==='shelf'?[['Количество секций',String(c.bay_count)],['Полки',String(c.shelf_count)],['Задняя стенка',c.back_panel?'Есть':'Открытый стеллаж']]:[]),
  ...(c.kind==='desk'?[['Основание',c.leg_style==='metal'?'Металлические опоры':'Боковины ЛДСП'],['Ящики',String(c.drawer_count)],['Расположение ящиков',c.drawer_count===0?'Без ящиков':({left:'Слева',right:'Справа',none:'Без тумбы'}[c.drawer_side]||'Справа')]]:[]),
- ...(c.kind==='kitchen'?[['Планировка','Прямая'],['Нижние модули',c.module_count+' шт.'],['Верхние шкафы',c.upper_cabinets===false?'Нет':c.upper_count+' шт.'],['Столешница',({stone:'Камень светлый',graphite:'Камень тёмный',oak:'Под дерево'}[c.countertop]||'Камень светлый')],['Фартук',({tile:'Плитка светлая',dark:'Плитка тёмная',plain:'Гладкий'}[c.backsplash]||'Плитка светлая')],['Мойка','Нижний шкаф №'+(c.sink_cabinet||1)],['Варочная панель','Нижний шкаф №'+(c.hob_cabinet||c.module_count)]]:[])
+ ...(c.kind==='kitchen'?[['Планировка','Прямая'],['Нижние модули',c.module_count+' шт.'],['Секции с ящиками',kitchenBaseModules(c).map((m,i)=>m.type==='drawers'?(i+1)+' ('+m.drawers+' шт.)':null).filter(Boolean).join(', ')||'Нет'],['Верхние шкафы',c.upper_cabinets===false?'Нет':c.upper_count+' шт.'],['Столешница',({stone:'Камень светлый',graphite:'Камень тёмный',oak:'Под дерево'}[c.countertop]||'Камень светлый')],['Фартук',({tile:'Плитка светлая',dark:'Плитка тёмная',plain:'Гладкий'}[c.backsplash]||'Плитка светлая')],['Мойка','Нижний шкаф №'+(c.sink_cabinet||1)],['Варочная панель','Нижний шкаф №'+(c.hob_cabinet||c.module_count)]]:[])
  ];
  return <div className="wc-details">{rows.map(([key,val],i)=><div key={i}><b>{key}</b><span>{val}</span></div>)}</div>;
 }
 
 function CustomFurniture({kind,supabase}){
  const [config,setConfig]=useState(()=>initialConfig(kind));
+ const [selectedKitchenModule,setSelectedKitchenModule]=useState(1);
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[note,setNote]=useState('');
  const [website,setWebsite]=useState('');
  const [consent,setConsent]=useState(false);
@@ -144,6 +150,10 @@ function CustomFurniture({kind,supabase}){
  const limits=SPEC[kind].limits;
  const maxKitchenModules=kind==='kitchen'?Math.min(6,Math.max(2,Math.floor(config.width_cm/45))):6;
  const kitchenCabinetChoices=Array.from({length:config.module_count},(_,i)=>({value:String(i+1),label:'Шкаф №'+(i+1)}));
+ const kitchenModules=kind==='kitchen'?kitchenBaseModules(config):[];
+ const selectedLowerIndex=Math.max(0,Math.min(selectedKitchenModule,kitchenModules.length-1));
+ const lowerModule=kitchenModules[selectedLowerIndex]||{type:'door',drawers:3};
+ const sinkLowerIndex=kind==='kitchen'?(Number(config.sink_cabinet)||1)-1:-1;
  const edit=(key,value)=>setConfig(c=>{
   const next={...c,[key]:value};
   if(kind==='kitchen'){
@@ -157,10 +167,17 @@ function CustomFurniture({kind,supabase}){
     if(key==='sink_cabinet')next.hob_cabinet=next.sink_cabinet===next.module_count?1:next.module_count;
     else next.sink_cabinet=next.hob_cabinet===1?next.module_count:1;
    }
+   next.base_modules=kitchenBaseModules(next);
   }
   return next;
  });
- const reset=()=>{setConfig(initialConfig(kind));setSubmitted(false);setError('')};
+ const reset=()=>{setConfig(initialConfig(kind));setSelectedKitchenModule(1);setSubmitted(false);setError('')};
+ const changeLowerModule=(key,value)=>setConfig(c=>{
+  const sink=(Number(c.sink_cabinet)||1)-1;
+  if(selectedLowerIndex===sink)return c;
+  const modules=kitchenBaseModules(c).map((m,i)=>i===selectedLowerIndex?{...m,[key]:value}:m);
+  return {...c,base_modules:modules};
+ });
  const changeDrawerSide=v=>setConfig(c=>({...c,drawer_side:v,drawer_count:v==='none'?0:(c.drawer_count||3)}));
  const changeDrawerCount=v=>setConfig(c=>({...c,drawer_count:v,drawer_side:v===0?'none':c.drawer_side==='none'?'right':c.drawer_side}));
  async function submit(e){
@@ -211,6 +228,27 @@ function CustomFurniture({kind,supabase}){
        <OptionSelect label="Плита — нижний шкаф" value={String(config.hob_cabinet)} values={kitchenCabinetChoices.filter(p=>Number(p.value)!==config.sink_cabinet)} onChange={v=>edit('hob_cabinet',Number(v))}/>
       </div>
       <p className="wc-hint">Нижние шкафы нумеруются слева направо. Выберите номер шкафа для мойки — её положение сразу изменится в 3D. Размеры техники и коммуникации уточняет мастер.</p>
+      <div className="fc-kitchen-modules">
+       <div className="fc-kitchen-modules-heading"><strong>Наполнение нижних секций</strong><span>Выберите шкаф</span></div>
+       <div className="fc-kitchen-module-buttons" role="group" aria-label="Нижние секции">
+        {kitchenModules.map((module,i)=><button type="button" key={i}
+         aria-pressed={selectedLowerIndex===i} className={selectedLowerIndex===i?'active':''}
+         onClick={()=>setSelectedKitchenModule(i)}>
+         <b>№{i+1}</b>
+         <small>{i===sinkLowerIndex?'Мойка':module.type==='drawers'?module.drawers+' ящ.':'Дверца'}</small>
+        </button>)}
+       </div>
+       {selectedLowerIndex===sinkLowerIndex?
+        <p className="fc-kitchen-sink-note">Шкаф №{selectedLowerIndex+1} — под мойкой. Для него оставлена дверца. Выберите другую секцию для ящиков.</p>
+        :<div className="fc-kitchen-module-editor">
+         <OptionSelect label={'Шкаф №'+(selectedLowerIndex+1)} value={lowerModule.type}
+          values={[{value:'door',label:'Дверца'},{value:'drawers',label:'Выдвижные ящики'}]}
+          onChange={v=>changeLowerModule('type',v)}/>
+         {lowerModule.type==='drawers'&&<OptionSelect label="Количество ящиков" value={String(lowerModule.drawers)}
+           values={numberOptions(2,4,'шт.')} onChange={v=>changeLowerModule('drawers',Number(v))}/>}
+        </div>}
+       <p className="wc-hint">Ящики в 3D всегда закрыты. Их фасады и количество меняются вместе с настройкой секции.</p>
+      </div>
      </div>}
      {kind==='dresser'&&<>
       <OptionSelect label="Количество ящиков" value={String(config.drawer_count)} values={numberOptions(2,8,'шт.')} onChange={v=>edit('drawer_count',Number(v))}/>
