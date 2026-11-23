@@ -89,3 +89,6 @@
  .sketch-dimensions input{font-size:16px}
 }
 @media(max-width:350px){.sketch-dimensions{grid-template-columns:1fr}}
+
+.sketch-manual{display:flex;align-items:center;justify-content:center;min-height:42px;width:100%;margin-top:12px;border:1px solid #9a8062;border-radius:8px;background:#f7efe4;color:#55422c;font-size:12px;font-weight:650}
+.sketch-manual:focus-visible{outline:2px solid #947957;outline-offset:2px}
