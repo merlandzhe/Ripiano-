@@ -3,6 +3,7 @@ import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {buildKitchen} from './kitchen-model.js';
 import './furniture-3d.css';
 
 const FINISH={white:'#f5f2e9',oak:'#c69f72',sand:'#c7bbae',graphite:'#535255'};
@@ -31,9 +32,9 @@ function woodGrain(hex){
 function buildModel(group,configuration,showDoors,doorView){
  const cfg=configuration||{};
  const kind=cfg.kind||'wardrobe';
- const w=meter(bound(cfg.width_cm,40,300,180));
- const h=meter(bound(cfg.height_cm,50,260,220));
- const d=meter(bound(cfg.depth_cm,20,100,55));
+ const w=meter(bound(cfg.width_cm,40,kind==='kitchen'?450:300,kind==='kitchen'?300:180));
+ const h=meter(bound(cfg.height_cm,50,kind==='kitchen'?280:260,kind==='kitchen'?240:220));
+ const d=meter(bound(cfg.depth_cm,20,100,kind==='kitchen'?60:55));
  const t=Math.min(.018,d*.065);
  const textures=[];
  const finish=id=>{
@@ -59,7 +60,9 @@ function buildModel(group,configuration,showDoors,doorView){
   mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);mesh.castShadow=true;group.add(mesh);
  };
  const drawerHandle=(x,y,z,length)=>{if(cfg.handles!=='hidden')piece(Math.max(.025,length),.008,.009,x,y,z,metal)};
- if(kind==='wardrobe'){
+ if(kind==='kitchen'){
+  buildKitchen(group,cfg,{piece,body,facade,inner,metal,materials});
+ }else if(kind==='wardrobe'){
   // Shared coordinate system: every door is flush with the same front plane.
   const plinth=.075,gap=.0025,margin=.002,frontZ=d/2+.002,faceDepth=.018;
   const usableWidth=w-2*t,innerHeight=h-plinth-2*t;
