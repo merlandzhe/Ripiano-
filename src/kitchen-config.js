@@ -22,7 +22,7 @@ export function kitchenBaseModules(config={}){
 // Group presets inspired by mixed cabinet fronts: outer doors match each other.
 export function kitchenDoorStyle(selected,index,count){
  const style=selected||'plain';
- if(style==='mixed')return index===0||index===count-1?'fluted':'diamond';
- if(style==='glass_frame')return index===0||index===count-1?'frame':'glass';
+ if(style==='mixed')return count===2?(index===0?'fluted':'diamond'):(index===0||index===count-1?'fluted':'diamond');
+ if(style==='glass_frame')return count===2?(index===0?'frame':'glass'):(index===0||index===count-1?'frame':'glass');
  return style;
 }
