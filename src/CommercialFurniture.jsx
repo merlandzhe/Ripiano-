@@ -8,7 +8,7 @@ const TYPES=[
  {id:'showcase',name:'Стеклянная витрина',note:'Стекло и полки',w:100,h:200,d:45,shelves:4},
  {id:'counter',name:'Прилавок',note:'Торговая стойка',w:140,h:105,d:70,shelves:2},
  {id:'storage',name:'Шкаф хранения',note:'Закрытые дверцы',w:100,h:220,d:50,shelves:4},
- {id:'island',name:'Островная витрина',note:'Доступ с двух сторон',w:140,h:130,d:75,shelves:3},
+ {id:'island',name:'Островная витрина',note:'Доступ со всех сторон',w:140,h:130,d:75,shelves:3},
  {id:'cash',name:'Кассовая стойка',note:'Место для расчётов',w:130,h:105,d:65,shelves:2}
 ];
 const FINISH=[{id:'white',label:'Белый'},{id:'oak',label:'Дуб'},{id:'sand',label:'Кашемир'},{id:'graphite',label:'Графит'}];
