@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {renderCommercialEntrance} from './commercial-entrance-3d.js';
 
 const palette={white:0xf2eee8,oak:0xb99572,sand:0xc7b9a6,graphite:0x55565a};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -13,7 +14,7 @@ function clearGroup(group){
  });
  group.clear();
 }
-function createRoom(scene,room,items,selectedId){
+function createRoom(scene,room,entrance,items,selectedId){
  const W=room.width/100,D=room.depth/100,H=room.height/100;
  // Skip expensive per-shelf shadow passes in larger layouts on mobile GPUs.
  const lightweight=items.length>28;
@@ -29,10 +30,7 @@ function createRoom(scene,room,items,selectedId){
  const grout=mat(0xc8c2b8);
  for(let x=-W/2+.5;x<W/2;x+=.5)box(root,.002,.001,D,x,-.018,0,grout,false);
  for(let z=-D/2+.5;z<D/2;z+=.5)box(root,W,.001,.002,0,-.018,z,grout,false);
- const wallMat=mat(0xf1ede6,{side:THREE.DoubleSide});
- box(root,W,H,.05,0,H/2,-D/2-.035,wallMat,false);
- const transparentWall=new THREE.MeshStandardMaterial({color:0xf3f0eb,transparent:true,opacity:.19,depthWrite:false,side:THREE.DoubleSide});
- box(root,.04,H,D,-W/2-.035,H/2,0,transparentWall,false);
+ renderCommercialEntrance(root,room,entrance,{box,mat});
  const beam=mat(0xbbb2a5);
  box(root,W,.025,.035,0,.04,-D/2-.005,beam,false);
  const bronze=mat(0xb1935e,{metalness:.62,roughness:.35});
@@ -120,7 +118,7 @@ function createRoom(scene,room,items,selectedId){
  // Shared models and each preview refresh are disposed together.
  return root;
 }
-export default function CommercialRoom3D({room,items,selectedId}){
+export default function CommercialRoom3D({room,entrance,items,selectedId}){
  const canvas=useRef(null),session=useRef(null);
  const [failed,setFailed]=useState(false);
  useEffect(()=>{
@@ -175,7 +173,7 @@ export default function CommercialRoom3D({room,items,selectedId}){
   const ratio=items.length>28?1.1:1.7;
   app.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,ratio));
   for(const child of [...app.root.children]){app.root.remove(child);clearGroup(child)}
-  const next=createRoom(app.scene,room,items,selectedId);
+  const next=createRoom(app.scene,room,entrance,items,selectedId);
   app.root.add(next);app.scene.remove(next);
   const fitKey=room.width+'|'+room.depth;
   if(app.fitKey!==fitKey){
@@ -188,7 +186,7 @@ export default function CommercialRoom3D({room,items,selectedId}){
    app.controls.update();
   }
   app.render();
- },[room,items,selectedId]);
+ },[room,entrance,items,selectedId]);
  return <div className="cp-3d-wrap">
   <canvas ref={canvas} className="cp-3d" aria-label="3D-помещение с выбранными коммерческими витринами, прилавками и стеллажами. Поверните пальцем, приблизьте двумя пальцами."/>
   {failed&&<p className="cp-3d-failure" role="alert">3D на устройстве недоступно. Используйте план помещения 2D.</p>}
