@@ -2,7 +2,7 @@ import React from 'react';
 import {entranceInPlan} from './commercial-entrance.js';
 
 // Floor outline has a real gap where the entrance is, plus a glass leaf and opening direction.
-export default function CommercialEntrancePlan({room,entrance,pad=34}){
+export default function CommercialEntrancePlan({room,entrance,pad=34,onDragStart,onNudge}){
  const e=entranceInPlan(room,entrance);
  const x0=pad,y0=pad,x1=pad+room.width,y1=pad+room.depth;
  const horizontal=e.wall==='front'||e.wall==='back';
@@ -29,13 +29,32 @@ export default function CommercialEntrancePlan({room,entrance,pad=34}){
  const openingLine=horizontal?
   <line x1={first} y1={py} x2={last} y2={py} stroke="#b78e5e" strokeWidth="8"/>:
   <line x1={px} y1={first} x2={px} y2={last} stroke="#b78e5e" strokeWidth="8"/>;
- return <g pointerEvents="none">
-  {walls}
+ return <g>
+  <g pointerEvents="none">{walls}
   {openingLine}
   <line x1={px} y1={py} x2={tipX} y2={tipY} stroke="#9b6c45" strokeWidth="5" strokeLinecap="round"/>
   <circle cx={px} cy={py} r="7" stroke="#fff" strokeWidth="2" fill="#946844"/>
   <text x={horizontal?center:e.wall==='left'?pad+24:pad+room.width-24}
    y={horizontal?py+(e.wall==='front'?26:-15):center}
    fill="#845d37" fontSize="14" fontWeight="700" textAnchor="middle">ВХОД</text>
+  </g>
+  {/* Enlarged transparent touch target following the opening on the current wall. */}
+  <rect className="cp-door-drag-target"
+   x={horizontal?first: px-27}
+   y={horizontal?py-27:first}
+   width={horizontal?e.width:54}
+   height={horizontal?54:e.width}
+   fill="#b78e5e" fillOpacity=".075"
+   stroke="#ad8157" strokeOpacity=".4" strokeWidth="1.6" strokeDasharray="6 5"
+   rx="5" pointerEvents="all" role="button" tabIndex={0}
+   aria-label="Перетащить входную дверь вдоль стены. Клавиши-стрелки — перемещение на 5 см."
+   onPointerDown={onDragStart}
+   onKeyDown={event=>{
+    const delta=horizontal?(event.key==='ArrowLeft'?-5:event.key==='ArrowRight'?5:0):
+      (event.key==='ArrowUp'?-5:event.key==='ArrowDown'?5:0);
+    if(delta){event.preventDefault();onNudge?.(delta);}
+   }}>
+   <title>Зажмите и двигайте дверь вдоль стены</title>
+  </rect>
  </g>;
 }
