@@ -155,3 +155,9 @@
  .cp-entrance-settings>p{font-size:10px}
 }
 @media(max-width:370px){.cp-entrance-fields{grid-template-columns:1fr}}
+
+
+/* Doorway on the floorplan: finger-friendly draggable handle. */
+.cp-plan .cp-door-drag-target{cursor:grab;touch-action:none;transition:fill-opacity .12s,stroke-opacity .12s}
+.cp-plan .cp-door-drag-target:hover,.cp-plan .cp-door-drag-target:focus-visible{fill-opacity:.22;stroke-opacity:.95;outline:none}
+.cp-plan .cp-door-drag-target:active{cursor:grabbing;fill-opacity:.26;stroke-opacity:1}
