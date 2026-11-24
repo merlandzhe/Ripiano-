@@ -141,7 +141,7 @@ function findSpace(item,items,room,wallPreferred=true,entrance=null){
  }
  return null;
 }
-function FloorPlan({room,entrance,items,selectedId,onSelect,onMove}){
+function FloorPlan({room,entrance,items,selectedId,onSelect,onMove,onEntranceMove}){
  const svg=useRef(null),drag=useRef(null);
  const pad=34,sw=room.width+pad*2,sh=room.depth+pad*2;
  const position=e=>{
@@ -152,14 +152,32 @@ function FloorPlan({room,entrance,items,selectedId,onSelect,onMove}){
   return {x:pos.x-pad,z:pos.y-pad};
  };
  const start=(e,id)=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
   e.preventDefault();
-  onSelect(id);drag.current=id;e.currentTarget.setPointerCapture(e.pointerId);
+  onSelect(id);
+  drag.current={type:'item',id,pointerId:e.pointerId};
+  svg.current?.setPointerCapture?.(e.pointerId);
+ };
+ const startEntrance=e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  e.stopPropagation();
+  drag.current={type:'entrance',pointerId:e.pointerId};
+  svg.current?.setPointerCapture?.(e.pointerId);
  };
  const move=e=>{
-  if(!drag.current)return;
-  const p=position(e);if(p)onMove(drag.current,round5(p.x),round5(p.z));
+  const current=drag.current;
+  if(!current||current.pointerId!==e.pointerId)return;
+  const p=position(e);
+  if(!p)return;
+  if(current.type==='entrance'){
+   // The door is constrained to its existing wall. State normalization enforces
+   // a 10 cm corner margin and snaps the position to multiples of 5 cm.
+   onEntranceMove(round5(['left','right'].includes(entrance.wall)?p.z:p.x));
+  }else onMove(current.id,round5(p.x),round5(p.z));
  };
  const end=e=>{
+  if(drag.current&&drag.current.pointerId!==e.pointerId)return;
   drag.current=null;
   if(e.currentTarget.hasPointerCapture?.(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);
  };
@@ -167,7 +185,7 @@ function FloorPlan({room,entrance,items,selectedId,onSelect,onMove}){
  return <div className="cp-plan-shell">
   <svg ref={svg} className="cp-plan" viewBox={'0 0 '+sw+' '+sh} preserveAspectRatio="xMidYMid meet"
    role="img" aria-label="План помещения сверху. Выберите и перетащите мебель для изменения расположения."
-   onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
+   onPointerMove={move} onPointerUp={end} onPointerCancel={end} onLostPointerCapture={()=>{drag.current=null}}>
    <rect x={pad} y={pad} width={room.width} height={room.depth} fill="#eae5dc" stroke="none"/>
    {Array.from({length:Math.ceil(room.width/50)},(_,i)=><line key={'v'+i} x1={pad+i*50} x2={pad+i*50}
     y1={pad} y2={pad+room.depth} stroke="#d6cfc5" strokeWidth="1"/>)}
@@ -204,10 +222,11 @@ function FloorPlan({room,entrance,items,selectedId,onSelect,onMove}){
      {selected&&<text x="0" y={m.depth/2+38} textAnchor="middle" fontSize="12" fontWeight="700" fill="#79502f">ЛИЦО</text>}
     </g>;
    })}
-   <CommercialEntrancePlan room={room} entrance={entrance} pad={pad}/>
+   <CommercialEntrancePlan room={room} entrance={entrance} pad={pad}
+     onDragStart={startEntrance} onNudge={delta=>onEntranceMove(entrance.offset+delta)}/>
    <text x={pad+room.width/2} y={pad+room.depth+30} fontSize="11" textAnchor="middle" fill="#796d5e">Ближняя сторона помещения</text>
   </svg>
-  <p>Стрелка «ЛИЦО» показывает, куда направлена открытая часть стеллажа или дверцы. Для установки спинкой к стене выберите её в настройках или нажмите «К ближайшей стене».</p>
+  <p><strong>Дверь можно передвигать пальцем:</strong> зажмите отметку «ВХОД» и ведите вдоль стены. Шаг — 5 см; мебель по-прежнему перетаскивается отдельно. Стрелка «ЛИЦО» показывает направление фасада.</p>
  </div>;
 }
 export default function CommercialFurniture(){
@@ -338,7 +357,7 @@ export default function CommercialFurniture(){
        max={Math.floor((wallLength(room,entrance.wall)-entrance.width/2-10)/5)*5} step={5}
        onChange={v=>updateEntrance('offset',v)}/>
      </div>
-     <p>На горизонтальных стенах расстояние считается слева, на боковых — от дальней стены. Створка схематично показана открытой внутрь.</p>
+     <p>На вкладке «План» можно зажать метку «ВХОД» и двигать её пальцем вдоль стены. Шаг 5 см. Также можно точно указать положение здесь: на горизонтальных стенах отсчёт слева, на боковых — от дальней стены.</p>
     </>}
    </div>
   </section>
@@ -354,7 +373,8 @@ export default function CommercialFurniture(){
     {view==='3d'?<Suspense fallback={<div className="cp-stage-fallback">Загружаем помещение…</div>}>
      <CommercialRoom3D room={room} entrance={entrance} items={items} selectedId={selected?.id}/>
     </Suspense>:<FloorPlan room={room} entrance={entrance} items={items} selectedId={selected?.id} onSelect={choose}
-     onMove={(id,x,z)=>updateModule(id,{x,z})}/>}
+     onMove={(id,x,z)=>updateModule(id,{x,z})}
+     onEntranceMove={offset=>updateEntrance('offset',offset)}/>}
     {selected&&<div className="cp-fast-orient">
      <div className="cp-orient-label"><strong>{labelFor(selected)}</strong>
       <span>Разверните лицевой стороной в зал</span>
