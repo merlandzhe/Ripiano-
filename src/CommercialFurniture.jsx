@@ -154,7 +154,7 @@ export default function CommercialFurniture(){
  const [selectedId,setSelectedId]=useState('m-1');
  const [view,setView]=useState('3d');
  const [notice,setNotice]=useState('');
- const nextId=useRef(4);
+ const nextId=useRef(Math.max(3,...project.items.map(m=>Number(String(m.id).replace(/^m-/,''))||0))+1);
  useEffect(()=>{
   const job=window.setTimeout(()=>{try{window.localStorage.setItem(KEY,JSON.stringify(project))}catch{}},300);
   return ()=>window.clearTimeout(job);
@@ -293,8 +293,8 @@ export default function CommercialFurniture(){
        <span>Подсветка полок (визуализация)</span>
       </label>}
       <div className="cp-pair">
-       <NumberField title="От левой стены" value={selected.x} min={0} max={room.width} onChange={v=>updateModule(selected.id,{x:v})}/>
-       <NumberField title="От дальней стены" value={selected.z} min={0} max={room.depth} onChange={v=>updateModule(selected.id,{z:v})}/>
+       <NumberField title="Центр от левой стены" value={selected.x} min={0} max={room.width} onChange={v=>updateModule(selected.id,{x:v})}/>
+       <NumberField title="Центр от дальней стены" value={selected.z} min={0} max={room.depth} onChange={v=>updateModule(selected.id,{z:v})}/>
       </div>
       <p className="cp-note"><Move size={15}/> Чтобы переставить предмет пальцем, переключитесь на вкладку «План».</p>
      </>}
