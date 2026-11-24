@@ -4,12 +4,14 @@ import {ArrowLeft,ArrowRight,Check,RotateCcw,Ruler} from 'lucide-react';
 import WardrobeConfigurator,{WardrobePreview,WardrobeDetails} from './WardrobeConfigurator.jsx';
 import FurniturePreviewSwitch from './FurniturePreviewSwitch.jsx';
 import KitchenDrawing from './KitchenDrawing.jsx';
+import CommercialFurniture from './CommercialFurniture.jsx';
 import {kitchenBaseModules} from './kitchen-config.js';
 import './furniture-constructor.css';
 import {PrivacyConsent,CONSENT_VERSION} from './Privacy.jsx';
 import {REQUESTS_ENABLED,OnlineRequestsPaused} from './ComplianceStatus.jsx';
 
 const TYPES=[
+ {id:'commercial',name:'Для бизнеса',title:'КОММЕРЧЕСКУЮ МЕБЕЛЬ',label:'Витрины и оборудование'},
  {id:'kitchen',name:'Кухня',title:'СВОЮ КУХНЮ',label:'Прямая кухня на заказ'},
  {id:'wardrobe',name:'Шкаф',title:'СВОЙ ШКАФ',label:'Шкаф на заказ'},
  {id:'dresser',name:'Комод',title:'СВОЙ КОМОД',label:'Комод на заказ'},
@@ -358,13 +360,13 @@ export default function FurnitureConstructor({supabase}){
   <div className="fc-selector"><div className="fc-selector-head"><span className="wc-eyebrow">ВЫБЕРИТЕ МЕБЕЛЬ</span><h2>Что будем создавать?</h2></div>
    <div className="fc-types" role="group" aria-label="Тип мебели">
     {TYPES.map(t=><button type="button" key={t.id} className={type===t.id?'active':''} aria-pressed={type===t.id} onClick={()=>setType(t.id)}>
-      <span className="fc-type-icon">{t.id==='kitchen'?'▤':t.id==='wardrobe'?'▥':t.id==='dresser'?'▤':t.id==='shelf'?'▦':'▱'}</span>
+      <span className="fc-type-icon">{t.id==='commercial'?'▣':t.id==='kitchen'?'▤':t.id==='wardrobe'?'▥':t.id==='dresser'?'▤':t.id==='shelf'?'▦':'▱'}</span>
       <span>{t.name}</span>{type===t.id&&<Check size={16}/>}
     </button>)}
    </div>
   </div>
   <div className="fc-inner" key={type}>
-   {type==='wardrobe'?<WardrobeConfigurator supabase={supabase}/>:<CustomFurniture kind={type} supabase={supabase}/>}
+   {type==='commercial'?<CommercialFurniture/>:type==='wardrobe'?<WardrobeConfigurator supabase={supabase}/>:<CustomFurniture kind={type} supabase={supabase}/>}
   </div>
  </main>;
 }
