@@ -1,5 +1,5 @@
 import React,{lazy,Suspense,useEffect,useMemo,useRef,useState} from 'react';
-import {ArrowRight,Check,Copy,Download,Grid2x2,Layers,Move,Plus,RotateCcw,Trash2,Box,Printer,Info} from 'lucide-react';
+import {ArrowRight,Check,Copy,Download,Grid2x2,Layers,Move,Plus,RotateCcw,Trash2,Box,Printer,Info,RotateCw,CornerDownLeft} from 'lucide-react';
 import './commercial-furniture.css';
 
 const CommercialRoom3D=lazy(()=>import('./CommercialRoom3D.jsx'));
@@ -17,6 +17,36 @@ const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number.isFinite(Number(va
 const round5=n=>Math.round(n/5)*5;
 const angle=value=>[0,90,180,270].includes(Number(value))?Number(value):0;
 const footprint=m=>m.rotation%180===90?{w:m.depth,d:m.width}:{w:m.width,d:m.depth};
+const WALLS=[
+ {id:'back',label:'К дальней стене',short:'Дальняя',rotation:0},
+ {id:'left',label:'К левой стене',short:'Левая',rotation:270},
+ {id:'right',label:'К правой стене',short:'Правая',rotation:90},
+ {id:'front',label:'К стене у входа',short:'У входа',rotation:180}
+];
+// The display/front of furniture is the local +Z face.
+// In the plan, positive rotation is clockwise; in Three.js the same stored
+// positive angle is applied with a negative Y rotation to preserve orientation.
+function nearestWall(item,room){
+ const footprintCm=footprint(item);
+ const distances=[
+  {id:'back',gap:item.z-footprintCm.d/2},
+  {id:'left',gap:item.x-footprintCm.w/2},
+  {id:'right',gap:room.width-item.x-footprintCm.w/2},
+  {id:'front',gap:room.depth-item.z-footprintCm.d/2}
+ ];
+ return distances.sort((a,b)=>a.gap-b.gap)[0].id;
+}
+function placeAtWall(item,room,side){
+ const wall=WALLS.find(w=>w.id===side)||WALLS[0];
+ const rotated={...item,rotation:wall.rotation};
+ const fp=footprint(rotated);
+ const inset=5;
+ if(side==='left')rotated.x=fp.w/2+inset;
+ else if(side==='right')rotated.x=room.width-fp.w/2-inset;
+ else if(side==='front')rotated.z=room.depth-fp.d/2-inset;
+ else rotated.z=fp.d/2+inset;
+ return normalized(rotated,room);
+}
 const normalized=(item,room)=>{
  const type=lookup(item.type);
  const w=clamp(item.width,40,Math.min(250,room.width-20));
@@ -140,13 +170,17 @@ function FloorPlan({room,items,selectedId,onSelect,onMove}){
       fill={m.finish==='graphite'?'#fff':'#352b23'}>{i+1}</text>
      <text x="0" y="13" textAnchor="middle" fontSize="10"
       fill={m.finish==='graphite'?'#fff':'#352b23'}>{names[m.type]}</text>
-     <path d={'M '+(-m.width/2)+' '+(m.depth/2+4)+' h '+m.width}
-      stroke={selected?'#8a5c36':'#d8c5ac'} strokeWidth="4"/>
+     {/* This arrow is placed on the real FRONT face (+depth), not on the back. */}
+     <path d={'M '+(-m.width*.22)+' '+(m.depth/2+3)+' h '+(m.width*.44)}
+      stroke={selected?'#9a623a':'#6c7d68'} strokeWidth={selected?5:3} strokeLinecap="round"/>
+     <path d={'M -10 '+(m.depth/2+9)+' L 0 '+(m.depth/2+25)+' L 10 '+(m.depth/2+9)+' Z'}
+      fill={selected?'#9a623a':'#6c7d68'} stroke="white" strokeWidth="1.6"/>
+     {selected&&<text x="0" y={m.depth/2+38} textAnchor="middle" fontSize="12" fontWeight="700" fill="#79502f">ЛИЦО</text>}
     </g>;
    })}
    <text x={pad+room.width/2} y={pad+room.depth+26} fontSize="12" textAnchor="middle" fill="#796d5e">Вход / фронтальная сторона</text>
   </svg>
-  <p>Нажмите на предмет и перетащите его пальцем. Поворот и точное положение — в настройках ниже.</p>
+  <p>Стрелка «ЛИЦО» показывает, куда направлена открытая часть стеллажа или дверцы. Для установки спинкой к стене выберите её в настройках или нажмите «К ближайшей стене».</p>
  </div>;
 }
 export default function CommercialFurniture(){
@@ -168,13 +202,27 @@ export default function CommercialFurniture(){
   return {...prev,room:next,items:prev.items.map(m=>normalized(m,next))};
  });
  const updateModule=(id,changes)=>setProject(prev=>({...prev,items:prev.items.map(m=>m.id===id?normalized({...m,...changes},prev.room):m)}));
+ const spinSelected=degrees=>{
+  if(!selected)return;
+  updateModule(selected.id,{rotation:(selected.rotation+degrees+360)%360});
+  setNotice('');
+ };
+ const alignSelected=wallId=>{
+  if(!selected)return;
+  const side=wallId==='nearest'?nearestWall(selected,room):wallId;
+  const aligned=placeAtWall(selected,room,side);
+  updateModule(selected.id,aligned);
+  setNotice('Мебель установлена спинкой к стене, лицевой стороной в помещение.');
+ };
  const add=type=>{
   if(items.length>=12){setNotice('Максимум 12 предметов в одном проекте.');return;}
   const current=nextId.current++;
   const raw=createItem(type,current,room);
   let placed=raw,found=false;
   for(let z=35;z<room.depth-20&&!found;z+=25)for(let x=35;x<room.width-20&&!found;x+=25){
-   const candidate=normalized({...raw,x,z},room);
+   const tentative=normalized({...raw,x,z},room);
+   const candidate=['shelf','showcase','storage'].includes(type)?
+    placeAtWall(tentative,room,nearestWall(tentative,room)):tentative;
    if(!conflicts([...items,candidate]).length){placed=candidate;found=true;}
   }
   if(!found)setNotice('Предмет добавлен, но свободного места не найдено. Проверьте пересечения на плане.');
@@ -233,6 +281,16 @@ export default function CommercialFurniture(){
      <CommercialRoom3D room={room} items={items} selectedId={selected?.id}/>
     </Suspense>:<FloorPlan room={room} items={items} selectedId={selected?.id} onSelect={choose}
      onMove={(id,x,z)=>updateModule(id,{x,z})}/>}
+    {selected&&<div className="cp-fast-orient">
+     <div className="cp-orient-label"><strong>{labelFor(selected)}</strong>
+      <span>Лицевая сторона — внутрь помещения</span>
+     </div>
+     <div className="cp-fast-orient-actions">
+      <button type="button" onClick={()=>spinSelected(270)} title="Повернуть налево на 90 градусов"><RotateCcw size={17}/> 90°</button>
+      <button type="button" onClick={()=>spinSelected(90)} title="Повернуть направо на 90 градусов"><RotateCw size={17}/> 90°</button>
+      <button type="button" className="cp-nearest-wall" onClick={()=>alignSelected('nearest')}><CornerDownLeft size={16}/> К ближайшей стене</button>
+     </div>
+    </div>}
     <div className="cp-stage-status">
      <span><Layers size={16}/> Предметов: <b>{items.length}</b></span>
      <span>Площадь: <b>{(room.width*room.depth/10000).toLocaleString('ru-RU',{maximumFractionDigits:2})} м²</b></span>
@@ -280,6 +338,15 @@ export default function CommercialFurniture(){
          {[0,90,180,270].map(v=><option key={v} value={v}>{v}°</option>)}
         </select>
        </label>
+      </div>
+      <div className="cp-wall-controls">
+       <strong>К какой стене повернуть спинкой?</strong>
+       <div className="cp-wall-grid">
+        {WALLS.map(w=><button type="button" key={w.id} onClick={()=>alignSelected(w.id)}
+         className={selected.rotation===w.rotation?'active':''}
+         aria-label={w.label}>{w.short}</button>)}
+       </div>
+       <small>Выберите стену: конструктор сам развернёт фасад внутрь зала и придвинет мебель к стене.</small>
       </div>
       {['shelf','showcase','island'].includes(selected.type)&&<NumberField title="Количество полок"
        value={selected.shelves} min={2} max={8} step={1} onChange={v=>updateModule(selected.id,{shelves:v})}/>}
