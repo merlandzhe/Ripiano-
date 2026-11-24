@@ -129,13 +129,13 @@ function isFree(item,items){
 }
 // Prefer wall alignment when practical, but use the middle of the shop too.
 // The previous algorithm only tried walls, even when the room centre was free.
-function findSpace(item,items,room,wallPreferred=true){
+function findSpace(item,items,room,wallPreferred=true,entrance=null){
  for(const align of wallPreferred?[true,false]:[false]){
   for(let z=30;z<=room.depth-25;z+=20){
    for(let x=30;x<=room.width-25;x+=20){
     const tentative=normalized({...item,x,z},room);
     const candidate=align?placeAtWall(tentative,room,nearestWall(tentative,room)):tentative;
-    if(isFree(candidate,items))return candidate;
+    if(isFree(candidate,items)&&(!entrance||entranceBlocked(room,entrance,[candidate]).length===0))return candidate;
    }
   }
  }
@@ -221,7 +221,7 @@ export default function CommercialFurniture(){
   return ()=>window.clearTimeout(job);
  },[project]);
  const {room,items}=project;
- const entrance=normalizeEntrance(project.entrance,room);
+ const entrance=useMemo(()=>normalizeEntrance(project.entrance,room),[project.entrance,room]);
  const doorwayCollisions=useMemo(()=>entranceBlocked(room,entrance,items),[room,items,project.entrance]);
  const selected=items.find(m=>m.id===selectedId)||items[0]||null;
  const overlaps=useMemo(()=>conflicts(items),[items]);
@@ -252,7 +252,7 @@ export default function CommercialFurniture(){
  const add=type=>{
   if(items.length>=MAX_ITEMS){setNotice('Достигнут технический лимит '+MAX_ITEMS+' предметов на один проект.');return;}
   const raw=createItem(type,nextId.current,room);
-  const placed=findSpace(raw,items,room,['shelf','showcase','storage'].includes(type));
+  const placed=findSpace(raw,items,room,['shelf','showcase','storage'].includes(type),entrance);
   if(!placed){
    setNotice('Не нашлось свободного места для этого предмета. Измените размеры, переместите мебель или увеличьте помещение.');
    setView('plan');
@@ -267,7 +267,7 @@ export default function CommercialFurniture(){
   if(!selected)return;
   if(items.length>=MAX_ITEMS){setNotice('Достигнут технический лимит '+MAX_ITEMS+' предметов.');return;}
   const raw={...selected,id:'m-'+nextId.current};
-  const placed=findSpace(raw,items,room,false);
+  const placed=findSpace(raw,items,room,false,entrance);
   if(!placed){
    setNotice('Не удалось найти свободное место для копии. Освободите место на плане или увеличьте помещение.');
    setView('plan');
