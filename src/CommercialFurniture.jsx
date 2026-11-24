@@ -75,6 +75,7 @@ const initial=()=>{
  ]};
 };
 const KEY='ripiano-commercial-draft-v1';
+const MAX_ITEMS=50; // Technical guard for browser/mobile performance, not room capacity
 function restore(){
  const fallback=initial();
  try{
@@ -84,7 +85,7 @@ function restore(){
    depth:round5(clamp(data.room.depth,300,1200)),
    height:round5(clamp(data.room.height,240,360))};
   const seen=new Set();
-  const items=data.items.slice(0,12).filter(m=>{
+  const items=data.items.slice(0,MAX_ITEMS).filter(m=>{
    if(!m||!TYPES.some(t=>t.id===m.type)||typeof m.id!=='string'||seen.has(m.id))return false;
    seen.add(m.id);return true;
   }).map(m=>normalized(m,room));
@@ -114,6 +115,28 @@ function conflicts(items){
    overlaps.push([i+1,j+1]);
  }
  return overlaps;
+}
+function isFree(item,items){
+ const f=footprint(item);
+ return items.every(other=>{
+  const o=footprint(other);
+  return Math.abs(item.x-other.x)>=(f.w+o.w)/2+6 ||
+   Math.abs(item.z-other.z)>=(f.d+o.d)/2+6;
+ });
+}
+// Prefer wall alignment when practical, but use the middle of the shop too.
+// The previous algorithm only tried walls, even when the room centre was free.
+function findSpace(item,items,room,wallPreferred=true){
+ for(const align of wallPreferred?[true,false]:[false]){
+  for(let z=30;z<=room.depth-25;z+=20){
+   for(let x=30;x<=room.width-25;x+=20){
+    const tentative=normalized({...item,x,z},room);
+    const candidate=align?placeAtWall(tentative,room,nearestWall(tentative,room)):tentative;
+    if(isFree(candidate,items))return candidate;
+   }
+  }
+ }
+ return null;
 }
 function FloorPlan({room,items,selectedId,onSelect,onMove}){
  const svg=useRef(null),drag=useRef(null);
@@ -215,24 +238,32 @@ export default function CommercialFurniture(){
   setNotice('Мебель установлена спинкой к стене, лицевой стороной в помещение.');
  };
  const add=type=>{
-  if(items.length>=12){setNotice('Максимум 12 предметов в одном проекте.');return;}
-  const current=nextId.current++;
-  const raw=createItem(type,current,room);
-  let placed=raw,found=false;
-  for(let z=35;z<room.depth-20&&!found;z+=25)for(let x=35;x<room.width-20&&!found;x+=25){
-   const tentative=normalized({...raw,x,z},room);
-   const candidate=['shelf','showcase','storage'].includes(type)?
-    placeAtWall(tentative,room,nearestWall(tentative,room)):tentative;
-   if(!conflicts([...items,candidate]).length){placed=candidate;found=true;}
+  if(items.length>=MAX_ITEMS){setNotice('Достигнут технический лимит '+MAX_ITEMS+' предметов на один проект.');return;}
+  const raw=createItem(type,nextId.current,room);
+  const placed=findSpace(raw,items,room,['shelf','showcase','storage'].includes(type));
+  if(!placed){
+   setNotice('Не нашлось свободного места для этого предмета. Измените размеры, переместите мебель или увеличьте помещение.');
+   setView('plan');
+   return;
   }
-  if(!found)setNotice('Предмет добавлен, но свободного места не найдено. Проверьте пересечения на плане.');
-  else setNotice('');
-  setProject(prev=>({...prev,items:[...prev.items,placed]}));setSelectedId(placed.id);
+  nextId.current++;
+  setNotice('');
+  setProject(prev=>({...prev,items:[...prev.items,placed]}));
+  setSelectedId(placed.id);
  };
  const duplicate=()=>{
-  if(!selected||items.length>=12){setNotice('Можно добавить не более 12 предметов.');return;}
-  const item=normalized({...selected,id:'m-'+nextId.current++,x:selected.x+50,z:selected.z+50},room);
-  setProject(prev=>({...prev,items:[...prev.items,item]}));setSelectedId(item.id);
+  if(!selected)return;
+  if(items.length>=MAX_ITEMS){setNotice('Достигнут технический лимит '+MAX_ITEMS+' предметов.');return;}
+  const raw={...selected,id:'m-'+nextId.current};
+  const placed=findSpace(raw,items,room,false);
+  if(!placed){
+   setNotice('Не удалось найти свободное место для копии. Освободите место на плане или увеличьте помещение.');
+   setView('plan');
+   return;
+  }
+  nextId.current++;
+  setNotice('');
+  setProject(prev=>({...prev,items:[...prev.items,placed]}));setSelectedId(placed.id);
  };
  const remove=()=>{
   if(!selected)return;
@@ -293,7 +324,7 @@ export default function CommercialFurniture(){
      </div>
     </div>}
     <div className="cp-stage-status">
-     <span><Layers size={16}/> Предметов: <b>{items.length}</b></span>
+     <span><Layers size={16}/> Предметов: <b>{items.length} / {MAX_ITEMS}</b></span>
      <span>Площадь: <b>{(room.width*room.depth/10000).toLocaleString('ru-RU',{maximumFractionDigits:2})} м²</b></span>
     </div>
     {overlaps.length>0&&<p className="cp-overlap" role="status">
@@ -302,7 +333,7 @@ export default function CommercialFurniture(){
    </div>
    <div className="cp-editor">
     <div className="cp-section-title"><span>03</span><h2>Добавить мебель</h2></div>
-    <div className="cp-type-grid">{TYPES.map(t=><button key={t.id} type="button" onClick={()=>add(t.id)} disabled={items.length>=12}>
+    <div className="cp-type-grid">{TYPES.map(t=><button key={t.id} type="button" onClick={()=>add(t.id)} disabled={items.length>=MAX_ITEMS}>
       <span className="cp-type-icon"><Plus size={16}/></span>
       <strong>{t.name}</strong><small>{t.note}</small>
      </button>)}</div>
