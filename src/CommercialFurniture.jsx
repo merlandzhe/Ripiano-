@@ -1,6 +1,8 @@
 import React,{lazy,Suspense,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowRight,Check,Copy,Download,Grid2x2,Layers,Move,Plus,RotateCcw,Trash2,Box,Printer,Info,RotateCw,CornerDownLeft} from 'lucide-react';
 import './commercial-furniture.css';
+import CommercialEntrancePlan from './CommercialEntrancePlan.jsx';
+import {ENTRANCE_WALLS,defaultEntrance,normalizeEntrance,wallLength,entranceBlocked} from './commercial-entrance.js';
 
 const CommercialRoom3D=lazy(()=>import('./CommercialRoom3D.jsx'));
 const TYPES=[
@@ -68,7 +70,7 @@ const createItem=(type,index,room)=>{
 };
 const initial=()=>{
  const room={width:600,depth:450,height:300};
- return {name:'Новый проект коммерческой мебели',room,items:[
+ return {name:'Новый проект коммерческой мебели',room,entrance:defaultEntrance(room),items:[
   normalized({...createItem('shelf',1,room),x:90,z:50},room),
   normalized({...createItem('showcase',2,room),x:245,z:55,finish:'white'},room),
   normalized({...createItem('counter',3,room),x:265,z:330,finish:'sand'},room)
@@ -89,7 +91,8 @@ function restore(){
    if(!m||!TYPES.some(t=>t.id===m.type)||typeof m.id!=='string'||seen.has(m.id))return false;
    seen.add(m.id);return true;
   }).map(m=>normalized(m,room));
-  return {name:typeof data.name==='string'?data.name.slice(0,90):fallback.name,room,items};
+  return {name:typeof data.name==='string'?data.name.slice(0,90):fallback.name,
+   room,entrance:normalizeEntrance(data.entrance,room),items};
  }catch{return fallback}
 }
 function NumberField({title,value,min,max,step=5,onChange}){
@@ -138,7 +141,7 @@ function findSpace(item,items,room,wallPreferred=true){
  }
  return null;
 }
-function FloorPlan({room,items,selectedId,onSelect,onMove}){
+function FloorPlan({room,entrance,items,selectedId,onSelect,onMove}){
  const svg=useRef(null),drag=useRef(null);
  const pad=34,sw=room.width+pad*2,sh=room.depth+pad*2;
  const position=e=>{
@@ -165,7 +168,7 @@ function FloorPlan({room,items,selectedId,onSelect,onMove}){
   <svg ref={svg} className="cp-plan" viewBox={'0 0 '+sw+' '+sh} preserveAspectRatio="xMidYMid meet"
    role="img" aria-label="План помещения сверху. Выберите и перетащите мебель для изменения расположения."
    onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
-   <rect x={pad} y={pad} width={room.width} height={room.depth} fill="#eae5dc" stroke="#8e857a" strokeWidth="5"/>
+   <rect x={pad} y={pad} width={room.width} height={room.depth} fill="#eae5dc" stroke="none"/>
    {Array.from({length:Math.ceil(room.width/50)},(_,i)=><line key={'v'+i} x1={pad+i*50} x2={pad+i*50}
     y1={pad} y2={pad+room.depth} stroke="#d6cfc5" strokeWidth="1"/>)}
    {Array.from({length:Math.ceil(room.depth/50)},(_,i)=><line key={'h'+i} y1={pad+i*50} y2={pad+i*50}
@@ -201,7 +204,8 @@ function FloorPlan({room,items,selectedId,onSelect,onMove}){
      {selected&&<text x="0" y={m.depth/2+38} textAnchor="middle" fontSize="12" fontWeight="700" fill="#79502f">ЛИЦО</text>}
     </g>;
    })}
-   <text x={pad+room.width/2} y={pad+room.depth+26} fontSize="12" textAnchor="middle" fill="#796d5e">Вход / фронтальная сторона</text>
+   <CommercialEntrancePlan room={room} entrance={entrance} pad={pad}/>
+   <text x={pad+room.width/2} y={pad+room.depth+30} fontSize="11" textAnchor="middle" fill="#796d5e">Ближняя сторона помещения</text>
   </svg>
   <p>Стрелка «ЛИЦО» показывает, куда направлена открытая часть стеллажа или дверцы. Для установки спинкой к стене выберите её в настройках или нажмите «К ближайшей стене».</p>
  </div>;
@@ -217,12 +221,20 @@ export default function CommercialFurniture(){
   return ()=>window.clearTimeout(job);
  },[project]);
  const {room,items}=project;
+ const entrance=normalizeEntrance(project.entrance,room);
+ const doorwayCollisions=useMemo(()=>entranceBlocked(room,entrance,items),[room,items,project.entrance]);
  const selected=items.find(m=>m.id===selectedId)||items[0]||null;
  const overlaps=useMemo(()=>conflicts(items),[items]);
  const choose=id=>{setSelectedId(id);setNotice('')};
  const updateRoom=(key,value)=>setProject(prev=>{
   const next={...prev.room,[key]:Math.round(clamp(value,key==='height'?240:300,key==='height'?360:1200))};
-  return {...prev,room:next,items:prev.items.map(m=>normalized(m,next))};
+  return {...prev,room:next,entrance:normalizeEntrance(prev.entrance,next),items:prev.items.map(m=>normalized(m,next))};
+ });
+ const updateEntrance=(key,value)=>setProject(prev=>{
+  const current=normalizeEntrance(prev.entrance,prev.room);
+  const next={...current,[key]:value};
+  if(key==='wall')next.offset=Math.round(wallLength(prev.room,value)/2/5)*5;
+  return {...prev,entrance:normalizeEntrance(next,prev.room)};
  });
  const updateModule=(id,changes)=>setProject(prev=>({...prev,items:prev.items.map(m=>m.id===id?normalized({...m,...changes},prev.room):m)}));
  const spinSelected=degrees=>{
@@ -298,6 +310,37 @@ export default function CommercialFurniture(){
     <NumberField title="Глубина" value={room.depth} min={300} max={1200} step={5} onChange={v=>updateRoom('depth',v)}/>
     <NumberField title="Высота" value={room.height} min={240} max={360} step={5} onChange={v=>updateRoom('height',v)}/>
    </div>
+   <div className="cp-entrance-settings">
+    <div className="cp-entrance-title">
+     <strong>Входная дверь</strong>
+     <label className="cp-entrance-switch">
+      <input type="checkbox" checked={entrance.enabled} onChange={e=>updateEntrance('enabled',e.target.checked)}/>
+      Показать вход
+     </label>
+    </div>
+    {entrance.enabled&&<>
+     <div className="cp-entrance-fields">
+      <label className="cp-field">В какой стене?
+       <select value={entrance.wall} onChange={e=>updateEntrance('wall',e.target.value)}>
+        {ENTRANCE_WALLS.map(w=><option key={w.id} value={w.id}>{w.label}</option>)}
+       </select>
+      </label>
+      <label className="cp-field">Петли
+       <select value={entrance.hinge} onChange={e=>updateEntrance('hinge',e.target.value)}>
+        <option value="left">У начала стены</option><option value="right">У конца стены</option>
+       </select>
+      </label>
+     </div>
+     <div className="cp-entrance-fields">
+      <NumberField title="Ширина двери" value={entrance.width} min={70} max={160} step={5}
+       onChange={v=>updateEntrance('width',v)}/>
+      <NumberField title="Положение центра от угла" value={entrance.offset} min={Math.ceil((entrance.width/2+10)/5)*5}
+       max={Math.floor((wallLength(room,entrance.wall)-entrance.width/2-10)/5)*5} step={5}
+       onChange={v=>updateEntrance('offset',v)}/>
+     </div>
+     <p>На горизонтальных стенах расстояние считается слева, на боковых — от дальней стены. Створка схематично показана открытой внутрь.</p>
+    </>}
+   </div>
   </section>
   <div className="cp-workspace">
    <div className="cp-stage">
@@ -309,8 +352,8 @@ export default function CommercialFurniture(){
      </div>
     </div>
     {view==='3d'?<Suspense fallback={<div className="cp-stage-fallback">Загружаем помещение…</div>}>
-     <CommercialRoom3D room={room} items={items} selectedId={selected?.id}/>
-    </Suspense>:<FloorPlan room={room} items={items} selectedId={selected?.id} onSelect={choose}
+     <CommercialRoom3D room={room} entrance={entrance} items={items} selectedId={selected?.id}/>
+    </Suspense>:<FloorPlan room={room} entrance={entrance} items={items} selectedId={selected?.id} onSelect={choose}
      onMove={(id,x,z)=>updateModule(id,{x,z})}/>}
     {selected&&<div className="cp-fast-orient">
      <div className="cp-orient-label"><strong>{labelFor(selected)}</strong>
@@ -327,6 +370,9 @@ export default function CommercialFurniture(){
      <span><Layers size={16}/> Предметов: <b>{items.length} / {MAX_ITEMS}</b></span>
      <span>Площадь: <b>{(room.width*room.depth/10000).toLocaleString('ru-RU',{maximumFractionDigits:2})} м²</b></span>
     </div>
+    {doorwayCollisions.length>0&&<p className="cp-overlap" role="status">
+     <Info size={17}/> Возле входа стоит мебель №{doorwayCollisions.join(', ')}. Проверьте проход и направление открытия двери.
+    </p>}
     {overlaps.length>0&&<p className="cp-overlap" role="status">
       <Info size={17}/> Возможные пересечения: {overlaps.map(([a,b])=>a+' и '+b).join(', ')}. Перед изготовлением проверьте расстановку.
     </p>}
@@ -409,6 +455,7 @@ export default function CommercialFurniture(){
      <span>{m.width} × {m.height} × {m.depth} см</span>
      <small>{FINISH.find(f=>f.id===m.finish)?.label} · {m.rotation}°{['shelf','showcase','island'].includes(m.type)?' · '+m.shelves+' полок':''}</small>
     </button>)}</div>:<div className="cp-empty">Добавьте мебель, чтобы сформировать комплект.</div>}
+   <p>Входная дверь: {entrance.enabled?ENTRANCE_WALLS.find(w=>w.id===entrance.wall)?.label+', '+entrance.width+' см':'не установлена'}.</p>
    <p className="cp-disclaimer">Проект хранится в браузере этого устройства. Это предварительная схема: монтаж, безопасность стекла и электрики, нагрузка на полки и точная стоимость определяются после замеров и технического согласования.</p>
    {notice&&<p className="cp-overlap" role="status">{notice}</p>}
    <div className="cp-actions">
