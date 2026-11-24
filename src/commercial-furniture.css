@@ -24,7 +24,7 @@
 .cp-view-tabs button{display:flex;align-items:center;gap:7px;justify-content:center;min-height:41px;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:650;color:#655b4e}
 .cp-view-tabs button.active{background:#fff;color:#25221d;box-shadow:0 1px 4px #00000012}
 .cp-3d-wrap{position:relative;background:#ece9e4;border:1px solid #dfd8cd;border-radius:10px;overflow:hidden;min-width:0}
-.cp-3d{display:block;width:100%;height:440px;touch-action:pan-y;user-select:none;outline:none}
+.cp-3d{display:block;width:100%;height:440px;touch-action:none;user-select:none;outline:none}
 .cp-view-caption{position:absolute;left:11px;right:11px;bottom:9px;color:#625a4c;font-size:10px;text-align:center;pointer-events:none;background:#f8f5eeaa;padding:6px;border-radius:5px}
 .cp-3d-failure{position:absolute;inset:25% 12%;display:grid;place-items:center;text-align:center;background:#fff;padding:14px;font-size:13px;line-height:1.5;color:#8b554b}
 .cp-stage-fallback{min-height:440px;background:#eee8df;display:grid;place-items:center;font-size:13px;color:#75695c}
