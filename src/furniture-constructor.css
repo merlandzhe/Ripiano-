@@ -6,7 +6,7 @@
 .fc-selector{max-width:1360px;width:calc(100% - 80px);margin:35px auto 0;padding:26px 28px;background:#eeebe5}
 .fc-selector-head{display:flex;justify-content:space-between;align-items:baseline;gap:18px;margin-bottom:20px}
 .fc-selector-head h2{margin:0;font-size:23px;line-height:1.1;letter-spacing:-.035em}
-.fc-types{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.fc-types{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
 .fc-types>button{display:flex;align-items:center;gap:12px;min-width:0;background:#f7f5f1;border:1px solid #d2cdc4;padding:14px 15px;min-height:64px;text-align:left;font-size:14px;font-weight:600;transition:background .15s,border-color .15s}
 .fc-types>button.active{border-color:#242320;background:#fff}
 .fc-types>button>svg{margin-left:auto;flex-shrink:0}
