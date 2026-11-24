@@ -110,3 +110,29 @@
  .cp-3d-wrap{max-height:350px}
  .cp-summary-list{grid-template-columns:repeat(3,1fr)}
 }
+
+
+/* Easy orientation of wall-mounted shopfitting modules on phones and desktops. */
+.cp-fast-orient{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:11px;margin:11px 0 2px;padding:11px 0;border-top:1px solid #ded6cb}
+.cp-orient-label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cp-orient-label strong{font-size:12px;color:#342c24}
+.cp-orient-label span{font-size:10px;color:#7b6f62;line-height:1.35}
+.cp-fast-orient-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.cp-fast-orient-actions button{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid #cbbdac;border-radius:8px;padding:9px 10px;min-height:42px;color:#594633;background:#fffaf3;font-size:11px;font-weight:650;white-space:nowrap}
+.cp-fast-orient-actions .cp-nearest-wall{background:#3a3027;color:#fff;border-color:#3a3027}
+.cp-fast-orient-actions button:focus-visible,.cp-wall-grid button:focus-visible{outline:2px solid #b28b5e;outline-offset:2px}
+.cp-wall-controls{border:1px solid #ddd2c4;background:#f9f6f0;border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:10px}
+.cp-wall-controls strong{font-size:12px;font-weight:700;color:#40362d}
+.cp-wall-controls small{font-size:11px;line-height:1.5;color:#83766a}
+.cp-wall-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cp-wall-grid button{min-width:0;min-height:41px;font-size:11px;font-weight:600;padding:8px 4px;color:#675746;border:1px solid #d6cabb;background:#fff;border-radius:6px;line-height:1.3}
+.cp-wall-grid button.active{background:#eee4d6;border-color:#927557;color:#473422}
+@media(max-width:680px){
+ .cp-fast-orient{align-items:stretch;flex-direction:column;gap:9px}
+ .cp-fast-orient-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .cp-fast-orient-actions button{min-height:44px;font-size:12px}
+ .cp-fast-orient-actions .cp-nearest-wall{grid-column:1/-1}
+ .cp-wall-controls{padding:10px}
+ .cp-wall-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cp-wall-grid button{min-height:44px;font-size:12px}
+}
