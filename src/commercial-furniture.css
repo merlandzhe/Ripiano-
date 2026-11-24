@@ -129,7 +129,7 @@
 .cp-wall-grid button.active{background:#eee4d6;border-color:#927557;color:#473422}
 @media(max-width:680px){
  .cp-fast-orient{align-items:stretch;flex-direction:column;gap:9px}
- .cp-fast-orient-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ .cp-fast-orient-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
  .cp-fast-orient-actions button{min-height:44px;font-size:12px}
  .cp-fast-orient-actions .cp-nearest-wall{grid-column:1/-1}
  .cp-wall-controls{padding:10px}
