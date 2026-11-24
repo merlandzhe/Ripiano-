@@ -15,12 +15,14 @@ function clearGroup(group){
 }
 function createRoom(scene,room,items,selectedId){
  const W=room.width/100,D=room.depth/100,H=room.height/100;
+ // Skip expensive per-shelf shadow passes in larger layouts on mobile GPUs.
+ const lightweight=items.length>28;
  const root=new THREE.Group();scene.add(root);
  const mat=(hex,opts={})=>new THREE.MeshStandardMaterial({color:hex,roughness:.71,...opts});
  const floorMat=mat(0xdfd8cc);
  const box=(owner,w,h,d,x,y,z,material,shadow=true)=>{
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-  mesh.position.set(x,y,z);mesh.castShadow=shadow;mesh.receiveShadow=true;owner.add(mesh);
+  mesh.position.set(x,y,z);mesh.castShadow=shadow&&!lightweight;mesh.receiveShadow=!lightweight;owner.add(mesh);
   return mesh;
  };
  box(root,W,.05,D,0,-.045,0,floorMat,false);
@@ -170,6 +172,8 @@ export default function CommercialRoom3D({room,items,selectedId}){
  },[]);
  useEffect(()=>{
   const app=session.current;if(!app)return;
+  const ratio=items.length>28?1.1:1.7;
+  app.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,ratio));
   for(const child of [...app.root.children]){app.root.remove(child);clearGroup(child)}
   const next=createRoom(app.scene,room,items,selectedId);
   app.root.add(next);app.scene.remove(next);
