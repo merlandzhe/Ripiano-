@@ -136,3 +136,22 @@
  .cp-wall-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .cp-wall-grid button{min-height:44px;font-size:12px}
 }
+
+
+/* Entrance door configuration lives under room dimensions, not in the furniture count. */
+.cp-entrance-settings{border-top:1px solid #dcd4c8;padding:18px 0 2px;margin-top:19px;display:flex;flex-direction:column;gap:13px}
+.cp-entrance-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cp-entrance-title strong{font-size:14px;font-weight:700;color:#342d25}
+.cp-entrance-switch{display:inline-flex;align-items:center;gap:9px;color:#5d5247;font-size:12px}
+.cp-entrance-switch input{accent-color:#92775a;width:18px;height:18px}
+.cp-entrance-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:720px}
+.cp-entrance-settings>p{font-size:11px;line-height:1.5;color:#817568;max-width:690px;margin:0}
+.cp-entrance-settings .cp-field select{background:#fff;min-height:45px}
+.cp-plan text{user-select:none}
+@media(max-width:680px){
+ .cp-entrance-settings{gap:11px;margin-top:15px;padding-top:15px}
+ .cp-entrance-fields{gap:9px}
+ .cp-entrance-title strong{font-size:13px}
+ .cp-entrance-settings>p{font-size:10px}
+}
+@media(max-width:370px){.cp-entrance-fields{grid-template-columns:1fr}}
