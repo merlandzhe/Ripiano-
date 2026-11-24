@@ -283,11 +283,12 @@ export default function CommercialFurniture(){
      onMove={(id,x,z)=>updateModule(id,{x,z})}/>}
     {selected&&<div className="cp-fast-orient">
      <div className="cp-orient-label"><strong>{labelFor(selected)}</strong>
-      <span>Лицевая сторона — внутрь помещения</span>
+      <span>Разверните лицевой стороной в зал</span>
      </div>
      <div className="cp-fast-orient-actions">
       <button type="button" onClick={()=>spinSelected(270)} title="Повернуть налево на 90 градусов"><RotateCcw size={17}/> 90°</button>
       <button type="button" onClick={()=>spinSelected(90)} title="Повернуть направо на 90 градусов"><RotateCw size={17}/> 90°</button>
+      <button type="button" onClick={()=>spinSelected(180)} title="Развернуть лицевой стороной в обратном направлении"><RotateCw size={17}/> 180°</button>
       <button type="button" className="cp-nearest-wall" onClick={()=>alignSelected('nearest')}><CornerDownLeft size={16}/> К ближайшей стене</button>
      </div>
     </div>}
